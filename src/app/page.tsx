@@ -3,18 +3,20 @@
 import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Product } from '@/types/product'
+import { Product, Workshop } from '@/types/product'
+import Link from 'next/link'
 
 export default function Home() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
-  const [newProduct, setNewProduct] = useState({ name: '', sku: '', stock: 0, price: 0 })
+  const [newProduct, setNewProduct] = useState({ name: '', sku: '', stock: 0, price: 0, category: 'materials' as 'materials' | 'refreshments', notes: '' })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [workshops, setWorkshops] = useState<Workshop[]>([])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -23,6 +25,7 @@ export default function Home() {
       return
     }
     fetchProducts()
+    fetchWorkshops()
   }, [session, status, router])
 
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function Home() {
         return
       }
 
-      setNewProduct({ name: '', sku: '', stock: 0, price: 0 })
+      setNewProduct({ name: '', sku: '', stock: 0, price: 0, category: 'materials', notes: '' })
       fetchProducts()
     } catch (err) {
       setError('Failed to add product')
@@ -124,17 +127,40 @@ export default function Home() {
     }
   }
 
+  async function fetchWorkshops() {
+    try {
+      const res = await fetch('/api/workshops')
+      const data = await res.json()
+      setWorkshops(data)
+    } catch (err) {
+      // Silent fail for workshops - they're optional for inventory view
+    }
+  }
+
   if (status === 'loading') return <div>Loading...</div>
   if (!session) return null
 
   const totalProducts = products.length
+  const materialsCount = products.filter(p => p.category === 'materials').length
+  const refreshmentsCount = products.filter(p => p.category === 'refreshments').length
   const totalValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0)
   const lowStockCount = products.filter(p => p.stock < 10).length
+
+  // Workshop metrics
+  const upcomingWorkshops = workshops.filter(w => w.status === 'planned').length
+  const completedWorkshops = workshops.filter(w => w.status === 'completed').length
 
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Simple Inventory</h1>
+        <div>
+          <h1>📦 Materials & Workshop Management</h1>
+          <div style={{ marginTop: '10px' }}>
+            <span style={{ color: '#007cba', fontWeight: 'bold' }}>📦 Inventory</span>
+            <Link href="/workshops" style={{ marginLeft: '15px', color: '#007cba', textDecoration: 'none' }}>🎪 Workshops</Link>
+            <Link href="/distributions" style={{ marginLeft: '15px', color: '#007cba', textDecoration: 'none' }}>📋 Distributions</Link>
+          </div>
+        </div>
         <div>
           <span>Welcome, {session.user?.email}</span>
           <button onClick={() => signOut()} style={{ marginLeft: '10px', padding: '5px 10px' }}>
@@ -144,18 +170,35 @@ export default function Home() {
       </div>
 
       {/* Dashboard Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-        <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '8px', border: '1px solid #e0e7ff' }}>
-          <h3 style={{ margin: '0 0 5px 0', color: '#1e40af' }}>Total Products</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#1e40af' }}>{totalProducts}</p>
-        </div>
-        <div style={{ background: '#f0fdf4', padding: '15px', borderRadius: '8px', border: '1px solid #dcfce7' }}>
-          <h3 style={{ margin: '0 0 5px 0', color: '#166534' }}>Total Value</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#166534' }}>${totalValue.toFixed(2)}</p>
-        </div>
-        <div style={{ background: lowStockCount > 0 ? '#fef2f2' : '#f0fdf4', padding: '15px', borderRadius: '8px', border: lowStockCount > 0 ? '1px solid #fecaca' : '1px solid #dcfce7' }}>
-          <h3 style={{ margin: '0 0 5px 0', color: lowStockCount > 0 ? '#dc2626' : '#166534' }}>Low Stock Items</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: lowStockCount > 0 ? '#dc2626' : '#166534' }}>{lowStockCount}</p>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 15px 0', color: '#374151' }}>📊 Overview</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+          <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '8px', border: '1px solid #e0e7ff' }}>
+            <h3 style={{ margin: '0 0 5px 0', color: '#1e40af' }}>📦 Materials</h3>
+            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#1e40af' }}>{materialsCount}</p>
+          </div>
+          <div style={{ background: '#fef7f0', padding: '15px', borderRadius: '8px', border: '1px solid #fed7aa' }}>
+            <h3 style={{ margin: '0 0 5px 0', color: '#ea580c' }}>🍪 Refreshments</h3>
+            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#ea580c' }}>{refreshmentsCount}</p>
+          </div>
+          <div style={{ background: '#f0fdf4', padding: '15px', borderRadius: '8px', border: '1px solid #dcfce7' }}>
+            <h3 style={{ margin: '0 0 5px 0', color: '#166534' }}>💰 Total Value</h3>
+            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#166534' }}>${totalValue.toFixed(2)}</p>
+          </div>
+          <div style={{ background: lowStockCount > 0 ? '#fef2f2' : '#f0fdf4', padding: '15px', borderRadius: '8px', border: lowStockCount > 0 ? '1px solid #fecaca' : '1px solid #dcfce7' }}>
+            <h3 style={{ margin: '0 0 5px 0', color: lowStockCount > 0 ? '#dc2626' : '#166534' }}>⚠️ Low Stock</h3>
+            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: lowStockCount > 0 ? '#dc2626' : '#166534' }}>{lowStockCount}</p>
+          </div>
+          <div style={{ background: '#f3f4f6', padding: '15px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+            <h3 style={{ margin: '0 0 5px 0', color: '#374151' }}>📅 Upcoming</h3>
+            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#374151' }}>{upcomingWorkshops}</p>
+            <p style={{ fontSize: '12px', margin: 0, color: '#6b7280' }}>workshops</p>
+          </div>
+          <div style={{ background: '#f0fdf4', padding: '15px', borderRadius: '8px', border: '1px solid #dcfce7' }}>
+            <h3 style={{ margin: '0 0 5px 0', color: '#166534' }}>✅ Completed</h3>
+            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#166534' }}>{completedWorkshops}</p>
+            <p style={{ fontSize: '12px', margin: 0, color: '#6b7280' }}>workshops</p>
+          </div>
         </div>
       </div>
 
@@ -179,8 +222,8 @@ export default function Home() {
       </div>
 
       <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
-        <h3>Add New Product</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', alignItems: 'end' }}>
+        <h3>Add New Item</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', alignItems: 'end' }}>
           <input
             placeholder="Name"
             value={newProduct.name}
@@ -195,6 +238,15 @@ export default function Home() {
             style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
             disabled={loading}
           />
+          <select
+            value={newProduct.category}
+            onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value as 'materials' | 'refreshments' })}
+            style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+            disabled={loading}
+          >
+            <option value="materials">📦 Materials</option>
+            <option value="refreshments">🍪 Refreshments</option>
+          </select>
           <input
             type="number"
             placeholder="Stock"
@@ -224,7 +276,7 @@ export default function Home() {
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
-            {loading ? 'Adding...' : 'Add Product'}
+            {loading ? 'Adding...' : 'Add Item'}
           </button>
         </div>
       </div>
@@ -234,6 +286,7 @@ export default function Home() {
           <tr style={{ backgroundColor: '#f5f5f5' }}>
             <th style={{ border: '1px solid #ccc', padding: '10px' }}>Name</th>
             <th style={{ border: '1px solid #ccc', padding: '10px' }}>SKU</th>
+            <th style={{ border: '1px solid #ccc', padding: '10px' }}>Category</th>
             <th style={{ border: '1px solid #ccc', padding: '10px' }}>Stock</th>
             <th style={{ border: '1px solid #ccc', padding: '10px' }}>Price</th>
             <th style={{ border: '1px solid #ccc', padding: '10px' }}>Actions</th>
@@ -261,6 +314,22 @@ export default function Home() {
                     ))}
                   />
                 ) : product.sku}
+              </td>
+              <td style={{ border: '1px solid #ccc', padding: '10px' }}>
+                {editingId === product._id ? (
+                  <select
+                    value={product.category}
+                    onChange={(e) => setProducts(products.map(p =>
+                      p._id === product._id ? { ...p, category: e.target.value as 'materials' | 'refreshments' } : p
+                    ))}
+                    style={{ width: '100%' }}
+                  >
+                    <option value="materials">📦 Materials</option>
+                    <option value="refreshments">🍪 Refreshments</option>
+                  </select>
+                ) : (
+                  <span>{product.category === 'materials' ? '📦 Materials' : '🍪 Refreshments'}</span>
+                )}
               </td>
               <td style={{ border: '1px solid #ccc', padding: '10px' }}>
                 {editingId === product._id ? (
