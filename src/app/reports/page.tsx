@@ -78,26 +78,12 @@ export default function ReportsPage() {
   const selectedReport = reports.find(r => r.workshop._id === selectedReportId)
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h1>📊 Workshop Reports & Analytics</h1>
-          <div style={{ marginTop: '10px' }}>
-            <Link href="/" style={{ marginRight: '15px', color: '#007cba', textDecoration: 'none' }}>📦 Inventory</Link>
-            <Link href="/workshops" style={{ marginRight: '15px', color: '#007cba', textDecoration: 'none' }}>🎪 Workshops</Link>
-            <Link href="/distributions" style={{ marginRight: '15px', color: '#007cba', textDecoration: 'none' }}>📋 Distributions</Link>
-            <span style={{ color: '#007cba', fontWeight: 'bold' }}>📊 Reports</span>
-            {session?.user?.role === 'admin' && (
-              <Link href="/admin" style={{ marginLeft: '15px', color: '#007cba', textDecoration: 'none' }}>⚙️ Admin</Link>
-            )}
-          </div>
-        </div>
-        <div>
-          <span>Welcome, {session.user?.name} ({session.user?.role})</span>
-          <button onClick={() => signOut()} style={{ marginLeft: '10px', padding: '5px 10px' }}>
-            Sign Out
-          </button>
-        </div>
+    <div className="container py-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">📊 Reports & Analytics</h1>
+        <p className="text-muted-foreground">
+          Comprehensive insights into workshops, inventory, and system usage
+        </p>
       </div>
 
       {/* Error Message */}

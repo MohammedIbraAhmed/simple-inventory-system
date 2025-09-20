@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import { SessionProvider } from './providers'
+import { Navbar } from '@/components/navbar'
+import { Footer } from '@/components/footer'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Simple Inventory',
-  description: 'Basic inventory management',
+  title: 'Inventory Management System',
+  description: 'Comprehensive inventory and workshop management solution',
 }
 
 export default function RootLayout({
@@ -14,9 +16,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="min-h-screen bg-background font-sans antialiased">
         <SessionProvider>
-          {children}
+          <div className="relative flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
         </SessionProvider>
       </body>
     </html>

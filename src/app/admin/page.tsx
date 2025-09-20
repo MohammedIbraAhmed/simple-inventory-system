@@ -197,24 +197,12 @@ export default function AdminPage() {
   const selectedProduct = products.find(p => p._id === allocation.productId)
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h1>⚙️ Admin Dashboard</h1>
-          <div style={{ marginTop: '10px' }}>
-            <Link href="/" style={{ marginRight: '15px', color: '#007cba', textDecoration: 'none' }}>📦 Inventory</Link>
-            <Link href="/workshops" style={{ marginRight: '15px', color: '#007cba', textDecoration: 'none' }}>🎪 Workshops</Link>
-            <Link href="/distributions" style={{ marginRight: '15px', color: '#007cba', textDecoration: 'none' }}>📋 Distributions</Link>
-            <Link href="/reports" style={{ marginRight: '15px', color: '#007cba', textDecoration: 'none' }}>📊 Reports</Link>
-            <span style={{ color: '#007cba', fontWeight: 'bold' }}>⚙️ Admin</span>
-          </div>
-        </div>
-        <div>
-          <span>Welcome, {session.user?.name} (Admin)</span>
-          <button onClick={() => signOut()} style={{ marginLeft: '10px', padding: '5px 10px' }}>
-            Sign Out
-          </button>
-        </div>
+    <div className="container py-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">⚙️ Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage users, allocate stock, and oversee system operations
+        </p>
       </div>
 
       {/* Tab Navigation */}

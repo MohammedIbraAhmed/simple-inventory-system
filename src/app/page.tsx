@@ -171,31 +171,15 @@ export default function Home() {
   const completedWorkshops = workshops.filter(w => w.status === 'completed').length
 
   return (
-    <div className="p-5 font-sans">
-      <div className="flex justify-between items-center mb-5">
-        <div>
-          <h1 className="text-2xl font-bold mb-2">📦 Materials & Workshop Management</h1>
-          <div className="mt-2.5">
-            <span className="text-blue-600 font-bold">📦 Inventory</span>
-            <Link href="/workshops" className="ml-4 text-blue-600 no-underline hover:underline">🎪 Workshops</Link>
-            <Link href="/distributions" className="ml-4 text-blue-600 no-underline hover:underline">📋 Distributions</Link>
-            <Link href="/reports" className="ml-4 text-blue-600 no-underline hover:underline">📊 Reports</Link>
-            {session?.user?.role === 'admin' && (
-              <Link href="/admin" className="ml-4 text-blue-600 no-underline hover:underline">⚙️ Admin</Link>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>Welcome, {session.user?.email}</span>
-          <Link href="/auth/change-password">
-            <Button variant="outline" size="sm">
-              🔐 Change Password
-            </Button>
-          </Link>
-          <Button onClick={() => signOut()} variant="outline" size="sm">
-            Sign Out
-          </Button>
-        </div>
+    <div className="container py-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">📦 Dashboard</h1>
+        <p className="text-muted-foreground">
+          {session?.user?.role === 'admin'
+            ? 'Manage your inventory, workshops, and system users'
+            : 'View your allocated materials and workshop activities'
+          }
+        </p>
       </div>
 
       {/* Dashboard Cards */}
