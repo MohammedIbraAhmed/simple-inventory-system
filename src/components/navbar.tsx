@@ -80,7 +80,7 @@ export function Navbar() {
               <NavigationMenuItem>
                 <NavigationMenuTrigger>📊 Reports</NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-white dark:bg-gray-950">
+                  <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
                     <li className="row-span-3">
                       <NavigationMenuLink asChild>
                         <Link
@@ -130,7 +130,7 @@ export function Navbar() {
                 <NavigationMenuItem>
                   <NavigationMenuTrigger>⚙️ Admin</NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="grid gap-3 p-6 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-white dark:bg-gray-950">
+                    <ul className="grid gap-3 p-6 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                       <li>
                         <NavigationMenuLink asChild>
                           <Link
