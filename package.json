@@ -10,6 +10,7 @@
     "create-admin": "ts-node --project tsconfig.seed.json scripts/create-admin.ts",
     "test-connection": "ts-node --project tsconfig.seed.json scripts/test-connection.ts",
     "test-atlas": "ts-node --project tsconfig.seed.json scripts/direct-atlas-test.ts",
+    "test-atlas-connection": "ts-node --project tsconfig.seed.json scripts/test-atlas-connection.ts",
     "create-atlas-admin": "ts-node --project tsconfig.seed.json scripts/create-atlas-admin.ts",
     "seed-atlas": "ts-node --project tsconfig.seed.json scripts/seed-atlas-data.ts"
   },
@@ -24,6 +25,7 @@
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.2",
     "lucide-react": "^0.544.0",
     "mongodb": "^6.9.0",
     "next": "^14.2.32",

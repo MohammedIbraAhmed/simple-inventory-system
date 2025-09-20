@@ -7,11 +7,15 @@ if (!process.env.MONGODB_URI) {
 const uri = process.env.MONGODB_URI
 const options = {
   maxPoolSize: 10, // Maintain up to 10 socket connections
-  serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+  serverSelectionTimeoutMS: 30000, // Keep trying to send operations for 30 seconds (Atlas needs more time)
   socketTimeoutMS: 45000, // Close connections after 45 seconds of inactivity
   maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+  connectTimeoutMS: 30000, // Give 30 seconds for initial connection
   retryWrites: true, // Retry failed writes
   retryReads: true, // Retry failed reads
+  // Atlas-specific options
+  ssl: true, // Enable SSL for Atlas
+  appName: 'InventoryManagementSystem', // Application name for Atlas monitoring
 }
 
 let client: MongoClient
@@ -38,10 +42,28 @@ if (process.env.NODE_ENV === 'development') {
 export async function connectDB(): Promise<Db> {
   try {
     const client = await clientPromise
+    // Test the connection
+    await client.db('admin').admin().ping()
     // Use the correct database name from the URI
     return client.db('sinv')
   } catch (error) {
     console.error('Database connection error:', error)
+
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('Server selection timed out')) {
+        console.error('Atlas Connection Help:')
+        console.error('1. Check if your MongoDB Atlas cluster is running (not paused)')
+        console.error('2. Verify your IP address is whitelisted in Atlas Network Access')
+        console.error('3. Ensure your connection string is correct')
+        console.error('4. Check your network/firewall settings')
+      } else if (error.message.includes('Authentication failed')) {
+        console.error('Atlas Authentication Help:')
+        console.error('1. Verify your username and password in the connection string')
+        console.error('2. Ensure the database user has proper permissions')
+      }
+    }
+
     throw new Error('Failed to connect to database')
   }
 }
