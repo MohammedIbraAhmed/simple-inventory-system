@@ -7,9 +7,7 @@ export const ProductSchema = z.object({
   sku: z.string().min(1, 'SKU is required').max(50, 'SKU too long'),
   stock: z.number().int().min(0, 'Stock cannot be negative'),
   price: z.number().min(0, 'Price cannot be negative'),
-  category: z.enum(['materials', 'refreshments'], {
-    errorMap: () => ({ message: 'Category must be either materials or refreshments' })
-  }),
+  category: z.enum(['materials', 'refreshments']),
   notes: z.string().max(500, 'Notes too long').optional()
 })
 

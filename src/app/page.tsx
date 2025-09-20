@@ -187,6 +187,11 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2">
           <span>Welcome, {session.user?.email}</span>
+          <Link href="/auth/change-password">
+            <Button variant="outline" size="sm">
+              🔐 Change Password
+            </Button>
+          </Link>
           <Button onClick={() => signOut()} variant="outline" size="sm">
             Sign Out
           </Button>

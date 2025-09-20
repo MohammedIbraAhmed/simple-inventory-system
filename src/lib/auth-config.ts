@@ -26,7 +26,7 @@ export const authOptions = {
             return null
           }
 
-          const { email, password } = validation.data
+          const { email, password } = validation.data as { email: string; password: string }
           const db = await connectDB()
 
           // Find user in database

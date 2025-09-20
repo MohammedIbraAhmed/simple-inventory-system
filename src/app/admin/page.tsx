@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
+    password: '',
     role: 'user' as 'admin' | 'user',
     profile: {
       organization: '',
@@ -21,6 +22,7 @@ export default function AdminPage() {
       location: ''
     }
   })
+  const [showPassword, setShowPassword] = useState(false)
   const [allocation, setAllocation] = useState({
     userId: '',
     productId: '',
@@ -78,6 +80,11 @@ export default function AdminPage() {
       return
     }
 
+    if (newUser.password && newUser.password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      return
+    }
+
     setLoading(true)
     setError('')
     try {
@@ -96,6 +103,7 @@ export default function AdminPage() {
       setNewUser({
         name: '',
         email: '',
+        password: '',
         role: 'user',
         profile: {
           organization: '',
@@ -159,6 +167,27 @@ export default function AdminPage() {
       }
     } catch (err) {
       setError('Failed to update user status')
+    }
+  }
+
+  async function resetUserPassword(userId: string, userEmail: string) {
+    if (!confirm(`Reset password for ${userEmail}?`)) return
+
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail })
+      })
+
+      const result = await res.json()
+      if (res.ok) {
+        alert(`Password reset initiated. Reset token: ${result.resetToken}`)
+      } else {
+        setError(result.error || 'Failed to reset password')
+      }
+    } catch (err) {
+      setError('Failed to reset password')
     }
   }
 
@@ -247,6 +276,32 @@ export default function AdminPage() {
                 style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
                 disabled={loading}
               />
+              <div style={{ position: 'relative' }}>
+                <input
+                  placeholder="Password (optional)"
+                  type={showPassword ? 'text' : 'password'}
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%', paddingRight: '35px', boxSizing: 'border-box' }}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '5px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
               <select
                 value={newUser.role}
                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'user' })}
@@ -279,7 +334,10 @@ export default function AdminPage() {
               </button>
             </div>
             <p style={{ fontSize: '12px', color: '#666', margin: '10px 0 0 0' }}>
-              Default password: "password" (users can change this later)
+              {newUser.password
+                ? 'Custom password will be set for this user'
+                : 'Default password "password" will be used (user can change later)'
+              }
             </p>
           </div>
 
@@ -311,19 +369,37 @@ export default function AdminPage() {
                     </span>
                   </td>
                   <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                    <button
-                      onClick={() => toggleUserStatus(user._id!, user.isActive)}
-                      style={{
-                        padding: '3px 6px',
-                        backgroundColor: user.isActive ? '#dc2626' : '#16a34a',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {user.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      <button
+                        onClick={() => toggleUserStatus(user._id!, user.isActive)}
+                        style={{
+                          padding: '3px 6px',
+                          backgroundColor: user.isActive ? '#dc2626' : '#16a34a',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        {user.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        onClick={() => resetUserPassword(user._id!, user.email)}
+                        style={{
+                          padding: '3px 6px',
+                          backgroundColor: '#f59e0b',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                        title="Reset Password"
+                      >
+                        🔑
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
