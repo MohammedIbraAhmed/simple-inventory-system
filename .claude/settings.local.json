@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(npm install:*)",
+      "Bash(npm audit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

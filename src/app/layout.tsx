@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { SessionProvider } from './providers'
+import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Simple Inventory',

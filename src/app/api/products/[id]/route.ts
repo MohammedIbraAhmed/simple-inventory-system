@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import { ObjectId } from 'mongodb'
+import { createAuthHandler, AuthSession } from '@/lib/auth-middleware'
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+async function handleUpdateProduct(request: NextRequest, session: AuthSession, params: { id: string }) {
   try {
     const db = await connectDB()
     const product = await request.json()
@@ -35,7 +36,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+async function handleDeleteProduct(request: NextRequest, session: AuthSession, params: { id: string }) {
   try {
     const db = await connectDB()
     const result = await db.collection('products').deleteOne({ _id: new ObjectId(params.id) })
@@ -50,3 +51,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 })
   }
 }
+
+// Admin-only access for main stock management
+export const PUT = createAuthHandler(handleUpdateProduct, 'admin')
+export const DELETE = createAuthHandler(handleDeleteProduct, 'admin')

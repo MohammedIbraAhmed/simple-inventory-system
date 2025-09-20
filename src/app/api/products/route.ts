@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import { Product } from '@/types/product'
+import { createAuthHandler, AuthSession } from '@/lib/auth-middleware'
+import { validateData, ProductSchema } from '@/lib/validations'
 
-export async function GET() {
+async function handleGetProducts(request: NextRequest, session: AuthSession) {
   try {
     const db = await connectDB()
     const products = await db.collection('products').find({}).toArray()
@@ -13,19 +15,21 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handleCreateProduct(request: NextRequest, session: AuthSession) {
   try {
     const db = await connectDB()
-    const product: Product = await request.json()
+    const productData = await request.json()
 
-    // Validate required fields
-    if (!product.name || !product.sku) {
-      return NextResponse.json({ error: 'Name and SKU are required' }, { status: 400 })
+    // Validate input data
+    const validation = validateData(ProductSchema, productData)
+    if (!validation.success) {
+      return NextResponse.json({
+        error: 'Validation failed',
+        details: validation.errors
+      }, { status: 400 })
     }
 
-    // Ensure numeric fields are numbers
-    product.stock = Number(product.stock) || 0
-    product.price = Number(product.price) || 0
+    const product = validation.data!
 
     // Check if SKU already exists
     const existingProduct = await db.collection('products').findOne({ sku: product.sku })
@@ -33,10 +37,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'SKU already exists' }, { status: 400 })
     }
 
-    const result = await db.collection('products').insertOne(product)
-    return NextResponse.json({ _id: result.insertedId, ...product })
+    // Add metadata
+    const { _id, ...productWithoutId } = product
+    const productWithMetadata = {
+      ...productWithoutId,
+      createdAt: new Date().toISOString(),
+      createdBy: session.user.id,
+      updatedAt: new Date().toISOString()
+    }
+
+    const result = await db.collection('products').insertOne(productWithMetadata)
+
+    // Log the action for audit trail
+    await db.collection('audit_logs').insertOne({
+      action: 'CREATE_PRODUCT',
+      userId: session.user.id,
+      userEmail: session.user.email,
+      resourceId: result.insertedId.toString(),
+      resourceType: 'product',
+      details: { sku: product.sku, name: product.name },
+      timestamp: new Date().toISOString()
+    })
+
+    return NextResponse.json({ _id: result.insertedId, ...productWithMetadata })
   } catch (error) {
     console.error('Create error:', error)
     return NextResponse.json({ error: 'Failed to create product' }, { status: 500 })
   }
 }
+
+// Admin-only access for main stock management
+export const GET = createAuthHandler(handleGetProducts, 'admin')
+export const POST = createAuthHandler(handleCreateProduct, 'admin')

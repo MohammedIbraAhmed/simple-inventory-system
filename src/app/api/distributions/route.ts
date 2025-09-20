@@ -38,8 +38,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Add distribution
+    const { _id, ...distributionWithoutId } = distribution
     const result = await db.collection('distributions').insertOne({
-      ...distribution,
+      ...distributionWithoutId,
       productName: product.name,
       date: new Date().toISOString().split('T')[0]
     })
