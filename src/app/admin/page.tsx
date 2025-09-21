@@ -76,8 +76,9 @@ export default function AdminPage() {
   async function fetchProducts() {
     try {
       const res = await fetch('/api/products')
-      const data = await res.json()
-      setProducts(data)
+      const response = await res.json()
+      // Handle the API response structure that includes pagination
+      setProducts(response.data || [])
     } catch (err) {
       setError('Failed to fetch products')
     }
@@ -204,7 +205,7 @@ export default function AdminPage() {
   if (status === 'loading') return <div>Loading...</div>
   if (!session || session.user.role !== 'admin') return null
 
-  const selectedProduct = products.find(p => p._id === allocation.productId)
+  const selectedProduct = Array.isArray(products) ? products.find(p => p._id === allocation.productId) : null
 
   return (
     <div className="container px-4 py-6 md:px-6">
@@ -424,11 +425,11 @@ export default function AdminPage() {
                 disabled={loading}
               >
                 <option value="">Select Product</option>
-                {products.filter(p => p.stock > 0).map((product) => (
+                {Array.isArray(products) ? products.filter(p => p.stock > 0).map((product) => (
                   <option key={product._id} value={product._id}>
                     {product.name} (Available: {product.stock})
                   </option>
-                ))}
+                )) : []}
               </select>
               <input
                 type="number"
@@ -471,7 +472,7 @@ export default function AdminPage() {
           {/* Current Stock Levels */}
           <h3>Main Stock Levels</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-            {products.map((product) => (
+            {Array.isArray(products) ? products.map((product) => (
               <div key={product._id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
                 <h4 style={{ margin: '0 0 10px 0' }}>{product.name}</h4>
                 <p style={{ margin: '0', fontSize: '18px', fontWeight: 'bold', color: product.stock < 10 ? '#dc2626' : '#16a34a' }}>
@@ -481,7 +482,7 @@ export default function AdminPage() {
                   {product.category === 'materials' ? '📦 Materials' : '🍪 Refreshments'}
                 </p>
               </div>
-            ))}
+            )) : []}
           </div>
         </TabsContent>
       </Tabs>

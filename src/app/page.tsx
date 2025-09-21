@@ -519,9 +519,8 @@ export default function Home() {
                         <Button
                           onClick={() => setEditingId(product._id!)}
                           disabled={loading}
-                          variant="outline"
                           size="sm"
-                          className="h-7 px-2 text-xs bg-green-600 text-white hover:bg-green-700"
+                          className="h-7 px-2 text-xs bg-green-600 text-white hover:bg-green-700 hover:text-white border-green-600 hover:border-green-700"
                         >
                           Edit
                         </Button>
