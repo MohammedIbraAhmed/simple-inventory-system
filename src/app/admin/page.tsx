@@ -5,6 +5,15 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { User, Product, UserBalance } from '@/types/product'
 import Link from 'next/link'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 export default function AdminPage() {
   const { data: session, status } = useSession()
@@ -171,7 +180,7 @@ export default function AdminPage() {
   }
 
   async function resetUserPassword(userId: string, userEmail: string) {
-    if (!confirm(`Reset password for ${userEmail}?`)) return
+    // Will be handled by Dialog component
 
     try {
       const res = await fetch('/api/auth/reset-password', {
@@ -182,7 +191,8 @@ export default function AdminPage() {
 
       const result = await res.json()
       if (res.ok) {
-        alert(`Password reset initiated. Reset token: ${result.resetToken}`)
+        // Show success message with proper UI component
+        setError(`Password reset initiated. Reset token: ${result.resetToken}`)
       } else {
         setError(result.error || 'Failed to reset password')
       }
@@ -197,73 +207,59 @@ export default function AdminPage() {
   const selectedProduct = products.find(p => p._id === allocation.productId)
 
   return (
-    <div className="container py-6">
+    <div className="container px-4 py-6 md:px-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">⚙️ Admin Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">⚙️ Admin Dashboard</h1>
         <p className="text-muted-foreground">
           Manage users, allocate stock, and oversee system operations
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div style={{ marginBottom: '20px', borderBottom: '1px solid #ccc' }}>
-        <button
-          onClick={() => setActiveTab('users')}
-          style={{
-            padding: '10px 20px',
-            border: 'none',
-            borderBottom: activeTab === 'users' ? '2px solid #007cba' : 'none',
-            backgroundColor: 'transparent',
-            color: activeTab === 'users' ? '#007cba' : '#666',
-            cursor: 'pointer'
-          }}
-        >
-          👥 User Management
-        </button>
-        <button
-          onClick={() => setActiveTab('allocation')}
-          style={{
-            padding: '10px 20px',
-            border: 'none',
-            borderBottom: activeTab === 'allocation' ? '2px solid #007cba' : 'none',
-            backgroundColor: 'transparent',
-            color: activeTab === 'allocation' ? '#007cba' : '#666',
-            cursor: 'pointer'
-          }}
-        >
-          📤 Stock Allocation
-        </button>
-      </div>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'users' | 'allocation')} className="mb-6">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 h-auto md:h-10">
+          <TabsTrigger value="users">👥 User Management</TabsTrigger>
+          <TabsTrigger value="allocation">📤 Stock Allocation</TabsTrigger>
+        </TabsList>
 
-      {/* Error Message */}
-      {error && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '10px', borderRadius: '8px', marginBottom: '20px' }}>
-          {error}
-          <button onClick={() => setError('')} style={{ float: 'right', background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer' }}>×</button>
-        </div>
-      )}
+        {/* Error Message */}
+        {error && (
+          <Alert variant={error.includes('Reset token') ? 'default' : 'destructive'} className="mb-6">
+            <AlertDescription className="flex justify-between items-center">
+              {error}
+              <Button
+                onClick={() => setError('')}
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0"
+              >
+                ×
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {activeTab === 'users' && (
-        <div>
+        <TabsContent value="users" className="space-y-6">
           {/* Create User Form */}
-          <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
-            <h3>Create New User</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', alignItems: 'end' }}>
-              <input
-                placeholder="Full Name"
-                value={newUser.name}
-                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              />
-              <input
-                placeholder="Email"
-                type="email"
-                value={newUser.email}
-                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              />
+          <Card>
+            <CardHeader>
+              <CardTitle>Create New User</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Input
+                  placeholder="Full Name"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  disabled={loading}
+                />
+                <Input
+                  placeholder="Email"
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  disabled={loading}
+                />
               <div style={{ position: 'relative' }}>
                 <input
                   placeholder="Password (optional)"
@@ -290,114 +286,120 @@ export default function AdminPage() {
                   {showPassword ? '🙈' : '👁️'}
                 </button>
               </div>
-              <select
-                value={newUser.role}
-                onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'admin' | 'user' })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              >
-                <option value="user">👤 Regular User</option>
-                <option value="admin">⚙️ Admin</option>
-              </select>
-              <input
-                placeholder="Organization"
-                value={newUser.profile.organization}
-                onChange={(e) => setNewUser({ ...newUser, profile: { ...newUser.profile, organization: e.target.value } })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              />
-              <button
-                onClick={createUser}
-                disabled={loading}
-                style={{
-                  padding: '8px 15px',
-                  backgroundColor: loading ? '#ccc' : '#007cba',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: loading ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {loading ? 'Creating...' : 'Create User'}
-              </button>
-            </div>
-            <p style={{ fontSize: '12px', color: '#666', margin: '10px 0 0 0' }}>
-              {newUser.password
-                ? 'Custom password will be set for this user'
-                : 'Default password "password" will be used (user can change later)'
-              }
-            </p>
-          </div>
+                <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value as 'admin' | 'user' })} disabled={loading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">👤 Regular User</SelectItem>
+                    <SelectItem value="admin">⚙️ Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Organization"
+                  value={newUser.profile.organization}
+                  onChange={(e) => setNewUser({ ...newUser, profile: { ...newUser.profile, organization: e.target.value } })}
+                  disabled={loading}
+                />
+                <Button
+                  onClick={createUser}
+                  disabled={loading}
+                  className="md:col-span-1"
+                >
+                  {loading ? 'Creating...' : 'Create User'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-4">
+                {newUser.password
+                  ? 'Custom password will be set for this user'
+                  : 'Default password "password" will be used (user can change later)'
+                }
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Users Table */}
-          <h3>System Users</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f5f5f5' }}>
-                <th style={{ border: '1px solid #ccc', padding: '10px' }}>Name</th>
-                <th style={{ border: '1px solid #ccc', padding: '10px' }}>Email</th>
-                <th style={{ border: '1px solid #ccc', padding: '10px' }}>Role</th>
-                <th style={{ border: '1px solid #ccc', padding: '10px' }}>Organization</th>
-                <th style={{ border: '1px solid #ccc', padding: '10px' }}>Status</th>
-                <th style={{ border: '1px solid #ccc', padding: '10px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.isArray(users) && users.map((user) => (
-                <tr key={user._id}>
-                  <td style={{ border: '1px solid #ccc', padding: '10px' }}>{user.name}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '10px' }}>{user.email}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                    {user.role === 'admin' ? '⚙️ Admin' : '👤 User'}
-                  </td>
-                  <td style={{ border: '1px solid #ccc', padding: '10px' }}>{user.profile?.organization || 'N/A'}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                    <span style={{ color: user.isActive ? '#16a34a' : '#dc2626' }}>
-                      {user.isActive ? '✅ Active' : '❌ Inactive'}
-                    </span>
-                  </td>
-                  <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <button
-                        onClick={() => toggleUserStatus(user._id!, user.isActive)}
-                        style={{
-                          padding: '3px 6px',
-                          backgroundColor: user.isActive ? '#dc2626' : '#16a34a',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '3px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        {user.isActive ? 'Deactivate' : 'Activate'}
-                      </button>
-                      <button
-                        onClick={() => resetUserPassword(user._id!, user.email)}
-                        style={{
-                          padding: '3px 6px',
-                          backgroundColor: '#f59e0b',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '3px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                        title="Reset Password"
-                      >
-                        🔑
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+          <Card>
+            <CardHeader>
+              <CardTitle>System Users</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.isArray(users) && users.map((user) => (
+                    <TableRow key={user._id}>
+                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                          {user.role === 'admin' ? '⚙️ Admin' : '👤 User'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{user.profile?.organization || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.isActive ? 'default' : 'destructive'}>
+                          {user.isActive ? '✅ Active' : '❌ Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => toggleUserStatus(user._id!, user.isActive)}
+                            variant={user.isActive ? 'destructive' : 'default'}
+                            size="sm"
+                          >
+                            {user.isActive ? 'Deactivate' : 'Activate'}
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                title="Reset Password"
+                              >
+                                🔑
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Reset Password</DialogTitle>
+                                <DialogDescription>
+                                  Reset password for {user.email}? A new temporary password will be generated.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button variant="outline">
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={() => resetUserPassword(user._id!, user.email)}
+                                >
+                                  Reset Password
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {activeTab === 'allocation' && (
-        <div>
+        <TabsContent value="allocation" className="space-y-6">
           {/* Stock Allocation Form */}
           <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
             <h3>Allocate Materials to User</h3>
@@ -481,8 +483,8 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

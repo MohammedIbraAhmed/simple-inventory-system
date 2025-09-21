@@ -5,6 +5,15 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Workshop, Participant, UserBalance, Product } from '@/types/product'
 import Link from 'next/link'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 export default function WorkshopsPage() {
   const { data: session, status } = useSession()
@@ -253,7 +262,7 @@ export default function WorkshopsPage() {
   }
 
   async function deleteWorkshop(id: string) {
-    if (!confirm('Are you sure you want to delete this workshop?')) return
+    // Will be handled by Dialog component
 
     setLoading(true)
     setError('')
@@ -282,489 +291,459 @@ export default function WorkshopsPage() {
   const totalParticipants = workshops.reduce((sum, w) => sum + (w.actualParticipants || 0), 0)
 
   return (
-    <div className="container py-6">
+    <div className="container px-4 py-6 md:px-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">🎪 Workshop Management</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">🎪 Workshop Management</h1>
         <p className="text-muted-foreground">
           Create, manage, and track workshops and participant registrations
         </p>
       </div>
 
       {/* Workshop Metrics */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-        <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '8px', border: '1px solid #e0e7ff' }}>
-          <h3 style={{ margin: '0 0 5px 0', color: '#1e40af' }}>📅 Planned</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#1e40af' }}>{plannedWorkshops.length}</p>
-        </div>
-        <div style={{ background: '#f0fdf4', padding: '15px', borderRadius: '8px', border: '1px solid #dcfce7' }}>
-          <h3 style={{ margin: '0 0 5px 0', color: '#166534' }}>✅ Completed</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#166534' }}>{completedWorkshops.length}</p>
-        </div>
-        <div style={{ background: '#fef7f0', padding: '15px', borderRadius: '8px', border: '1px solid #fed7aa' }}>
-          <h3 style={{ margin: '0 0 5px 0', color: '#ea580c' }}>👥 Participants</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#ea580c' }}>
-            {totalParticipants}
-          </p>
-        </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mb-6">
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <CardTitle className="text-blue-800 text-sm mb-1">📅 Planned</CardTitle>
+            <p className="text-2xl font-bold text-blue-800">{plannedWorkshops.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-4">
+            <CardTitle className="text-green-700 text-sm mb-1">✅ Completed</CardTitle>
+            <p className="text-2xl font-bold text-green-700">{completedWorkshops.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-orange-50 border-orange-200">
+          <CardContent className="p-4">
+            <CardTitle className="text-orange-600 text-sm mb-1">👥 Participants</CardTitle>
+            <p className="text-2xl font-bold text-orange-600">{totalParticipants}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tab Navigation */}
-      <div style={{ marginBottom: '20px', borderBottom: '1px solid #ccc' }}>
-        <button
-          onClick={() => setActiveTab('workshops')}
-          style={{
-            padding: '10px 20px',
-            border: 'none',
-            borderBottom: activeTab === 'workshops' ? '2px solid #007cba' : 'none',
-            backgroundColor: 'transparent',
-            color: activeTab === 'workshops' ? '#007cba' : '#666',
-            cursor: 'pointer'
-          }}
-        >
-          🎪 Workshops
-        </button>
-        <button
-          onClick={() => setActiveTab('participants')}
-          style={{
-            padding: '10px 20px',
-            border: 'none',
-            borderBottom: activeTab === 'participants' ? '2px solid #007cba' : 'none',
-            backgroundColor: 'transparent',
-            color: activeTab === 'participants' ? '#007cba' : '#666',
-            cursor: 'pointer'
-          }}
-        >
-          👥 Participants
-        </button>
-        <button
-          onClick={() => setActiveTab('materials')}
-          style={{
-            padding: '10px 20px',
-            border: 'none',
-            borderBottom: activeTab === 'materials' ? '2px solid #007cba' : 'none',
-            backgroundColor: 'transparent',
-            color: activeTab === 'materials' ? '#007cba' : '#666',
-            cursor: 'pointer'
-          }}
-        >
-          📦 Material Distribution
-        </button>
-      </div>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'workshops' | 'participants' | 'materials')} className="mb-6">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 h-auto md:h-10">
+          <TabsTrigger value="workshops">🎪 Workshops</TabsTrigger>
+          <TabsTrigger value="participants">👥 Participants</TabsTrigger>
+          <TabsTrigger value="materials">📦 Material Distribution</TabsTrigger>
+        </TabsList>
 
-      {/* Error Message */}
-      {error && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '10px', borderRadius: '8px', marginBottom: '20px' }}>
-          {error}
-          <button onClick={() => setError('')} style={{ float: 'right', background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer' }}>×</button>
-        </div>
-      )}
+        {/* Error Message */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription className="flex justify-between items-center">
+              {error}
+              <Button
+                onClick={() => setError('')}
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0 text-destructive hover:text-destructive"
+              >
+                ×
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {activeTab === 'workshops' && (
-        <div>
+        <TabsContent value="workshops" className="space-y-6">
           {/* Add Workshop Form */}
-          <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
-            <h3>Schedule New Workshop</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', alignItems: 'end' }}>
-              <input
-                placeholder="Workshop Title"
-                value={newWorkshop.title}
-                onChange={(e) => setNewWorkshop({ ...newWorkshop, title: e.target.value })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              />
-              <textarea
-                placeholder="Description"
-                value={newWorkshop.description}
-                onChange={(e) => setNewWorkshop({ ...newWorkshop, description: e.target.value })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', minHeight: '60px' }}
-                disabled={loading}
-              />
-              <input
-                type="date"
-                value={newWorkshop.date}
-                onChange={(e) => setNewWorkshop({ ...newWorkshop, date: e.target.value })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              />
-              <input
-                type="time"
-                placeholder="Start Time"
-                value={newWorkshop.startTime}
-                onChange={(e) => setNewWorkshop({ ...newWorkshop, startTime: e.target.value })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              />
-              <input
-                type="time"
-                placeholder="End Time"
-                value={newWorkshop.endTime}
-                onChange={(e) => setNewWorkshop({ ...newWorkshop, endTime: e.target.value })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              />
-              <input
-                placeholder="Location"
-                value={newWorkshop.location}
-                onChange={(e) => setNewWorkshop({ ...newWorkshop, location: e.target.value })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              />
-              <input
-                type="number"
-                placeholder="Expected Participants"
-                value={newWorkshop.expectedParticipants}
-                onChange={(e) => setNewWorkshop({ ...newWorkshop, expectedParticipants: parseInt(e.target.value) || 0 })}
-                style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                disabled={loading}
-              />
-          <button
-            onClick={addWorkshop}
-            disabled={loading}
-            style={{
-              padding: '8px 15px',
-              backgroundColor: loading ? '#ccc' : '#007cba',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {loading ? 'Adding...' : 'Add Workshop'}
-          </button>
-        </div>
-      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Schedule New Workshop</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Input
+                  placeholder="Workshop Title"
+                  value={newWorkshop.title}
+                  onChange={(e) => setNewWorkshop({ ...newWorkshop, title: e.target.value })}
+                  disabled={loading}
+                />
+                <Input
+                  placeholder="Description"
+                  value={newWorkshop.description}
+                  onChange={(e) => setNewWorkshop({ ...newWorkshop, description: e.target.value })}
+                  disabled={loading}
+                />
+                <Input
+                  type="date"
+                  value={newWorkshop.date}
+                  onChange={(e) => setNewWorkshop({ ...newWorkshop, date: e.target.value })}
+                  disabled={loading}
+                />
+                <Input
+                  type="time"
+                  placeholder="Start Time"
+                  value={newWorkshop.startTime}
+                  onChange={(e) => setNewWorkshop({ ...newWorkshop, startTime: e.target.value })}
+                  disabled={loading}
+                />
+                <Input
+                  type="time"
+                  placeholder="End Time"
+                  value={newWorkshop.endTime}
+                  onChange={(e) => setNewWorkshop({ ...newWorkshop, endTime: e.target.value })}
+                  disabled={loading}
+                />
+                <Input
+                  placeholder="Location"
+                  value={newWorkshop.location}
+                  onChange={(e) => setNewWorkshop({ ...newWorkshop, location: e.target.value })}
+                  disabled={loading}
+                />
+                <Input
+                  type="number"
+                  placeholder="Expected Participants"
+                  value={newWorkshop.expectedParticipants}
+                  onChange={(e) => setNewWorkshop({ ...newWorkshop, expectedParticipants: parseInt(e.target.value) || 0 })}
+                  disabled={loading}
+                />
+                <Button
+                  onClick={addWorkshop}
+                  disabled={loading}
+                  className="md:col-span-1"
+                >
+                  {loading ? 'Adding...' : 'Add Workshop'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Workshops Table */}
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f5f5f5' }}>
-            <th style={{ border: '1px solid #ccc', padding: '10px' }}>Title</th>
-            <th style={{ border: '1px solid #ccc', padding: '10px' }}>Date</th>
-            <th style={{ border: '1px solid #ccc', padding: '10px' }}>Participants</th>
-            <th style={{ border: '1px solid #ccc', padding: '10px' }}>Status</th>
-            <th style={{ border: '1px solid #ccc', padding: '10px' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {workshops.map((workshop) => (
-            <tr key={workshop._id}>
-              <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                {editingId === workshop._id ? (
-                  <input
-                    value={workshop.title}
-                    onChange={(e) => setWorkshops(workshops.map(w =>
-                      w._id === workshop._id ? { ...w, title: e.target.value } : w
-                    ))}
-                  />
-                ) : workshop.title}
-              </td>
-              <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                {editingId === workshop._id ? (
-                  <input
-                    type="date"
-                    value={workshop.date}
-                    onChange={(e) => setWorkshops(workshops.map(w =>
-                      w._id === workshop._id ? { ...w, date: e.target.value } : w
-                    ))}
-                  />
-                ) : workshop.date}
-              </td>
-              <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                {editingId === workshop._id ? (
-                  <input
-                    type="number"
-                    value={workshop.actualParticipants}
-                    onChange={(e) => setWorkshops(workshops.map(w =>
-                      w._id === workshop._id ? { ...w, actualParticipants: parseInt(e.target.value) || 0 } : w
-                    ))}
-                  />
-                ) : workshop.actualParticipants}
-              </td>
-              <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                {editingId === workshop._id ? (
-                  <select
-                    value={workshop.status}
-                    onChange={(e) => setWorkshops(workshops.map(w =>
-                      w._id === workshop._id ? { ...w, status: e.target.value as 'planned' | 'completed' } : w
-                    ))}
-                  >
-                    <option value="planned">📅 Planned</option>
-                    <option value="completed">✅ Completed</option>
-                  </select>
-                ) : (
-                  <span>{workshop.status === 'planned' ? '📅 Planned' : '✅ Completed'}</span>
-                )}
-              </td>
-              <td style={{ border: '1px solid #ccc', padding: '10px' }}>
-                {editingId === workshop._id ? (
-                  <>
-                    <button
-                      onClick={() => updateWorkshop(workshop._id!, workshop)}
-                      disabled={loading}
-                      style={{
-                        margin: '2px',
-                        padding: '3px 6px',
-                        backgroundColor: loading ? '#ccc' : '#007cba',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: loading ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      style={{
-                        margin: '2px',
-                        padding: '3px 6px',
-                        backgroundColor: '#6b7280',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '3px'
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setEditingId(workshop._id!)}
-                      disabled={loading}
-                      style={{
-                        margin: '2px',
-                        padding: '3px 6px',
-                        backgroundColor: loading ? '#ccc' : '#16a34a',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: loading ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteWorkshop(workshop._id!)}
-                      disabled={loading}
-                      style={{
-                        margin: '2px',
-                        padding: '3px 6px',
-                        backgroundColor: loading ? '#ccc' : '#dc2626',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: loading ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          {/* Workshops Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Workshops</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Participants</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {workshops.map((workshop) => (
+                    <TableRow key={workshop._id}>
+                      <TableCell>
+                        {editingId === workshop._id ? (
+                          <Input
+                            value={workshop.title}
+                            onChange={(e) => setWorkshops(workshops.map(w =>
+                              w._id === workshop._id ? { ...w, title: e.target.value } : w
+                            ))}
+                            className="h-8"
+                          />
+                        ) : workshop.title}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === workshop._id ? (
+                          <Input
+                            type="date"
+                            value={workshop.date}
+                            onChange={(e) => setWorkshops(workshops.map(w =>
+                              w._id === workshop._id ? { ...w, date: e.target.value } : w
+                            ))}
+                            className="h-8"
+                          />
+                        ) : workshop.date}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === workshop._id ? (
+                          <Input
+                            type="number"
+                            value={workshop.actualParticipants}
+                            onChange={(e) => setWorkshops(workshops.map(w =>
+                              w._id === workshop._id ? { ...w, actualParticipants: parseInt(e.target.value) || 0 } : w
+                            ))}
+                            className="h-8"
+                          />
+                        ) : workshop.actualParticipants}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === workshop._id ? (
+                          <Select
+                            value={workshop.status}
+                            onValueChange={(value) => setWorkshops(workshops.map(w =>
+                              w._id === workshop._id ? { ...w, status: value as 'planned' | 'completed' } : w
+                            ))}
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="planned">📅 Planned</SelectItem>
+                              <SelectItem value="completed">✅ Completed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge variant={workshop.status === 'planned' ? 'default' : 'secondary'}>
+                            {workshop.status === 'planned' ? '📅 Planned' : '✅ Completed'}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === workshop._id ? (
+                          <div className="flex gap-1">
+                            <Button
+                              onClick={() => updateWorkshop(workshop._id!, workshop)}
+                              disabled={loading}
+                              size="sm"
+                              className="h-7"
+                            >
+                              {loading ? 'Saving...' : 'Save'}
+                            </Button>
+                            <Button
+                              onClick={() => setEditingId(null)}
+                              disabled={loading}
+                              variant="secondary"
+                              size="sm"
+                              className="h-7"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1">
+                            <Button
+                              onClick={() => setEditingId(workshop._id!)}
+                              disabled={loading}
+                              variant="outline"
+                              size="sm"
+                              className="h-7"
+                            >
+                              Edit
+                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  disabled={loading}
+                                  variant="destructive"
+                                  size="sm"
+                                  className="h-7"
+                                >
+                                  Delete
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Delete Workshop</DialogTitle>
+                                  <DialogDescription>
+                                    Are you sure you want to delete "{workshop.title}"? This action cannot be undone.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                  <Button variant="outline" onClick={() => {}}>
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => deleteWorkshop(workshop._id!)}
+                                    disabled={loading}
+                                  >
+                                    {loading ? 'Deleting...' : 'Delete'}
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
           {!loading && workshops.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-              No workshops scheduled yet. Add your first workshop above!
-            </div>
+            <Card>
+              <CardContent className="text-center py-10 text-muted-foreground">
+                No workshops scheduled yet. Add your first workshop above!
+              </CardContent>
+            </Card>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {activeTab === 'participants' && (
-        <div>
+        <TabsContent value="participants" className="space-y-6">
           {/* Workshop Selection */}
-          <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
-            <h3>Select Workshop to Manage Participants</h3>
-            <select
-              value={selectedWorkshopId || ''}
-              onChange={(e) => setSelectedWorkshopId(e.target.value || null)}
-              style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '16px' }}
-            >
-              <option value="">Choose a workshop...</option>
-              {workshops.map((workshop) => (
-                <option key={workshop._id} value={workshop._id}>
-                  {workshop.title} - {workshop.date} at {workshop.location}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Workshop to Manage Participants</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedWorkshopId || ''} onValueChange={(value) => setSelectedWorkshopId(value || null)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a workshop..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {workshops.map((workshop) => (
+                    <SelectItem key={workshop._id} value={workshop._id}>
+                      {workshop.title} - {workshop.date} at {workshop.location}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
 
           {selectedWorkshopId && (
             <>
               {/* Add Participant Form */}
-              <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
-                <h3>Register New Participant</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', alignItems: 'end' }}>
-                  <input
-                    placeholder="Full Name"
-                    value={newParticipant.name}
-                    onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
-                    style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                    disabled={loading}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Age"
-                    value={newParticipant.age}
-                    onChange={(e) => setNewParticipant({ ...newParticipant, age: parseInt(e.target.value) || 0 })}
-                    style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                    disabled={loading}
-                  />
-                  <input
-                    placeholder="Phone Number"
-                    value={newParticipant.phoneNumber}
-                    onChange={(e) => setNewParticipant({ ...newParticipant, phoneNumber: e.target.value })}
-                    style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                    disabled={loading}
-                  />
-                  <button
-                    onClick={addParticipant}
-                    disabled={loading}
-                    style={{
-                      padding: '8px 15px',
-                      backgroundColor: loading ? '#ccc' : '#007cba',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: loading ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {loading ? 'Adding...' : 'Add Participant'}
-                  </button>
-                </div>
-
-                {/* Special Status Checkboxes */}
-                <div style={{ marginTop: '15px' }}>
-                  <h4 style={{ margin: '0 0 10px 0' }}>Special Status (check if applicable):</h4>
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <input
-                        type="checkbox"
-                        checked={newParticipant.specialStatus.isDisabled}
-                        onChange={(e) => setNewParticipant({
-                          ...newParticipant,
-                          specialStatus: { ...newParticipant.specialStatus, isDisabled: e.target.checked }
-                        })}
-                        disabled={loading}
-                      />
-                      🦽 Disabled
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <input
-                        type="checkbox"
-                        checked={newParticipant.specialStatus.isWounded}
-                        onChange={(e) => setNewParticipant({
-                          ...newParticipant,
-                          specialStatus: { ...newParticipant.specialStatus, isWounded: e.target.checked }
-                        })}
-                        disabled={loading}
-                      />
-                      🩹 Wounded
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <input
-                        type="checkbox"
-                        checked={newParticipant.specialStatus.isSeparated}
-                        onChange={(e) => setNewParticipant({
-                          ...newParticipant,
-                          specialStatus: { ...newParticipant.specialStatus, isSeparated: e.target.checked }
-                        })}
-                        disabled={loading}
-                      />
-                      💔 Separated
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <input
-                        type="checkbox"
-                        checked={newParticipant.specialStatus.isUnaccompanied}
-                        onChange={(e) => setNewParticipant({
-                          ...newParticipant,
-                          specialStatus: { ...newParticipant.specialStatus, isUnaccompanied: e.target.checked }
-                        })}
-                        disabled={loading}
-                      />
-                      👤 Unaccompanied
-                    </label>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Register New Participant</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Input
+                      placeholder="Full Name"
+                      value={newParticipant.name}
+                      onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
+                      disabled={loading}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Age"
+                      value={newParticipant.age}
+                      onChange={(e) => setNewParticipant({ ...newParticipant, age: parseInt(e.target.value) || 0 })}
+                      disabled={loading}
+                    />
+                    <Input
+                      placeholder="Phone Number"
+                      value={newParticipant.phoneNumber}
+                      onChange={(e) => setNewParticipant({ ...newParticipant, phoneNumber: e.target.value })}
+                      disabled={loading}
+                    />
                   </div>
-                </div>
-              </div>
+                  <div className="mt-4">
+                    <Button
+                      onClick={addParticipant}
+                      disabled={loading}
+                    >
+                      {loading ? 'Adding...' : 'Add Participant'}
+                    </Button>
+                  </div>
+
+                  {/* Special Status Checkboxes */}
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-3">Special Status (check if applicable):</h4>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={newParticipant.specialStatus.isDisabled}
+                          onChange={(e) => setNewParticipant({
+                            ...newParticipant,
+                            specialStatus: { ...newParticipant.specialStatus, isDisabled: e.target.checked }
+                          })}
+                          disabled={loading}
+                          className="rounded border-gray-300"
+                        />
+                        🦽 Disabled
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={newParticipant.specialStatus.isWounded}
+                          onChange={(e) => setNewParticipant({
+                            ...newParticipant,
+                            specialStatus: { ...newParticipant.specialStatus, isWounded: e.target.checked }
+                          })}
+                          disabled={loading}
+                          className="rounded border-gray-300"
+                        />
+                        🩹 Wounded
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={newParticipant.specialStatus.isSeparated}
+                          onChange={(e) => setNewParticipant({
+                            ...newParticipant,
+                            specialStatus: { ...newParticipant.specialStatus, isSeparated: e.target.checked }
+                          })}
+                          disabled={loading}
+                          className="rounded border-gray-300"
+                        />
+                        💔 Separated
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={newParticipant.specialStatus.isUnaccompanied}
+                          onChange={(e) => setNewParticipant({
+                            ...newParticipant,
+                            specialStatus: { ...newParticipant.specialStatus, isUnaccompanied: e.target.checked }
+                          })}
+                          disabled={loading}
+                          className="rounded border-gray-300"
+                        />
+                        👤 Unaccompanied
+                      </label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Participants List */}
-              <div>
-                <h3>Registered Participants ({participants.length})</h3>
-                {participants.length > 0 ? (
-                  <div style={{ display: 'grid', gap: '10px' }}>
-                    {participants.map((participant) => (
-                      <div key={participant._id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                          <div>
-                            <h4 style={{ margin: '0 0 5px 0' }}>{participant.name}</h4>
-                            <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#666' }}>
-                              Age: {participant.age} | Phone: {participant.phoneNumber}
-                            </p>
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                              {participant.specialStatus.isDisabled && <span style={{ background: '#e0e7ff', color: '#3730a3', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>🦽 Disabled</span>}
-                              {participant.specialStatus.isWounded && <span style={{ background: '#fef2f2', color: '#991b1b', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>🩹 Wounded</span>}
-                              {participant.specialStatus.isSeparated && <span style={{ background: '#fef7f0', color: '#9a3412', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>💔 Separated</span>}
-                              {participant.specialStatus.isUnaccompanied && <span style={{ background: '#f0fdf4', color: '#166534', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>👤 Unaccompanied</span>}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Registered Participants ({participants.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {participants.length > 0 ? (
+                    <div className="space-y-4">
+                      {participants.map((participant) => (
+                        <Card key={participant._id} className="bg-gray-50">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <h4 className="font-medium mb-2">{participant.name}</h4>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  Age: {participant.age} | Phone: {participant.phoneNumber}
+                                </p>
+                                <div className="flex gap-2 flex-wrap mb-2">
+                                  {participant.specialStatus.isDisabled && <Badge variant="secondary">🦽 Disabled</Badge>}
+                                  {participant.specialStatus.isWounded && <Badge variant="destructive">🩹 Wounded</Badge>}
+                                  {participant.specialStatus.isSeparated && <Badge variant="outline">💔 Separated</Badge>}
+                                  {participant.specialStatus.isUnaccompanied && <Badge variant="default">👤 Unaccompanied</Badge>}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Status: <Badge
+                                    variant={participant.attendanceStatus === 'attended' ? 'default' :
+                                           participant.attendanceStatus === 'no-show' ? 'destructive' : 'secondary'}
+                                  >
+                                    {participant.attendanceStatus === 'registered' ? '📝 Registered' :
+                                     participant.attendanceStatus === 'attended' ? '✅ Attended' : '❌ No Show'}
+                                  </Badge>
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm">Edit</Button>
+                                <Button variant="destructive" size="sm">Remove</Button>
+                              </div>
                             </div>
-                            <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#666' }}>
-                              Status: <span style={{ color: participant.attendanceStatus === 'attended' ? '#16a34a' : participant.attendanceStatus === 'no-show' ? '#dc2626' : '#ea580c' }}>
-                                {participant.attendanceStatus === 'registered' ? '📝 Registered' :
-                                 participant.attendanceStatus === 'attended' ? '✅ Attended' : '❌ No Show'}
-                              </span>
-                            </p>
-                          </div>
-                          <div style={{ display: 'flex', gap: '5px' }}>
-                            <button
-                              style={{
-                                padding: '4px 8px',
-                                backgroundColor: '#16a34a',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '3px',
-                                cursor: 'pointer',
-                                fontSize: '12px'
-                              }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              style={{
-                                padding: '4px 8px',
-                                backgroundColor: '#dc2626',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '3px',
-                                cursor: 'pointer',
-                                fontSize: '12px'
-                              }}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '40px', color: '#666', border: '1px solid #ddd', borderRadius: '8px' }}>
-                    No participants registered yet. Add the first participant above!
-                  </div>
-                )}
-              </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground border border-dashed rounded-lg">
+                      No participants registered yet. Add the first participant above!
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {activeTab === 'materials' && (
-        <div>
+        <TabsContent value="materials" className="space-y-6">
           {/* Workshop Selection for Materials */}
           <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
             <h3>Select Workshop for Material Distribution</h3>
@@ -916,8 +895,8 @@ export default function WorkshopsPage() {
               </div>
             </>
           )}
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

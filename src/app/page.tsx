@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 export default function Home() {
   const { data: session, status } = useSession()
@@ -51,8 +52,9 @@ export default function Home() {
     setError('')
     try {
       const res = await fetch('/api/products')
-      const data = await res.json()
-      setProducts(data)
+      const response = await res.json()
+      // Handle the API response structure that includes pagination
+      setProducts(response.data || [])
     } catch (err) {
       setError('Failed to fetch products')
     } finally {
@@ -116,7 +118,7 @@ export default function Home() {
   }
 
   async function deleteProduct(id: string) {
-    if (!confirm('Are you sure you want to delete this product?')) return
+    // Will be handled by Dialog component
 
     setLoading(true)
     setError('')
@@ -171,9 +173,9 @@ export default function Home() {
   const completedWorkshops = workshops.filter(w => w.status === 'completed').length
 
   return (
-    <div className="container py-6">
+    <div className="container px-4 py-6 md:px-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">📦 Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">📦 Dashboard</h1>
         <p className="text-muted-foreground">
           {session?.user?.role === 'admin'
             ? 'Manage your inventory, workshops, and system users'
@@ -184,12 +186,12 @@ export default function Home() {
 
       {/* Dashboard Cards */}
       <div className="mb-5">
-        <h2 className="m-0 mb-4 text-gray-700 text-xl font-semibold">
+        <h2 className="m-0 mb-4 text-gray-700 text-lg md:text-xl font-semibold">
           📊 {session?.user?.role === 'admin' ? 'System Overview' : 'My Dashboard'}
         </h2>
 
         {session?.user?.role === 'admin' ? (
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 mb-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-5">
             <Card className="bg-blue-50 border-blue-200 py-4">
               <CardContent className="p-4">
                 <CardTitle className="text-blue-800 text-sm mb-1">📦 Materials</CardTitle>
@@ -236,7 +238,7 @@ export default function Home() {
             </Card>
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
             <Card className="bg-blue-50 border-blue-200 py-4">
               <CardContent className="p-4">
                 <CardTitle className="text-blue-800 text-sm mb-1">📦 My Materials</CardTitle>
@@ -282,7 +284,7 @@ export default function Home() {
         <div className="mb-5">
           <h3 className="text-lg font-semibold mb-3">📋 My Material Balances</h3>
           {userBalances.length > 0 ? (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {userBalances.map((balance) => (
                 <Card key={balance._id} className="bg-gray-50">
                   <CardContent className="p-4">
@@ -360,7 +362,7 @@ export default function Home() {
               <CardTitle>Add New Item to Main Stock</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2.5 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-2.5 items-end">
                 <Input
                   placeholder="Name"
                   value={newProduct.name}
@@ -408,15 +410,16 @@ export default function Home() {
           </Card>
 
           {/* Main Stock Table - Admin Only */}
-          <Table>
+          <div className="overflow-x-auto">
+            <Table className="min-w-full">
             <TableHeader>
               <TableRow className="bg-gray-100">
-                <TableHead>Name</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="min-w-[120px]">Name</TableHead>
+                <TableHead className="min-w-[80px]">SKU</TableHead>
+                <TableHead className="min-w-[100px]">Category</TableHead>
+                <TableHead className="min-w-[80px]">Stock</TableHead>
+                <TableHead className="min-w-[80px]">Price</TableHead>
+                <TableHead className="min-w-[140px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -492,12 +495,12 @@ export default function Home() {
                   </TableCell>
                   <TableCell>
                     {editingId === product._id ? (
-                      <div className="flex gap-1">
+                      <div className="flex flex-col sm:flex-row gap-1">
                         <Button
                           onClick={() => updateProduct(product._id!, product)}
                           disabled={loading}
                           size="sm"
-                          className="h-7 px-2"
+                          className="h-7 px-2 text-xs"
                         >
                           {loading ? 'Saving...' : 'Save'}
                         </Button>
@@ -506,31 +509,54 @@ export default function Home() {
                           disabled={loading}
                           variant="secondary"
                           size="sm"
-                          className="h-7 px-2"
+                          className="h-7 px-2 text-xs"
                         >
                           Cancel
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex gap-1">
+                      <div className="flex flex-col sm:flex-row gap-1">
                         <Button
                           onClick={() => setEditingId(product._id!)}
                           disabled={loading}
                           variant="outline"
                           size="sm"
-                          className="h-7 px-2 bg-green-600 text-white hover:bg-green-700"
+                          className="h-7 px-2 text-xs bg-green-600 text-white hover:bg-green-700"
                         >
                           Edit
                         </Button>
-                        <Button
-                          onClick={() => deleteProduct(product._id!)}
-                          disabled={loading}
-                          variant="destructive"
-                          size="sm"
-                          className="h-7 px-2"
-                        >
-                          {loading ? 'Deleting...' : 'Delete'}
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              disabled={loading}
+                              variant="destructive"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                            >
+                              Delete
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Delete Product</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button variant="outline">
+                                Cancel
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={() => deleteProduct(product._id!)}
+                                disabled={loading}
+                              >
+                                {loading ? 'Deleting...' : 'Delete'}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     )}
                   </TableCell>
@@ -538,6 +564,7 @@ export default function Home() {
               ))}
             </TableBody>
           </Table>
+          </div>
 
           {loading && products.length === 0 && (
             <div className="text-center py-10 text-gray-600">

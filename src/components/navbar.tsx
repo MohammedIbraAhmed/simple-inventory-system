@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
+import { NotificationSystem } from '@/components/notification-system'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,7 +28,7 @@ export function Navbar() {
   if (status === 'loading') {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
+        <div className="container flex h-14 items-center px-4 md:px-6">
           <div className="mr-4 hidden md:flex">
             <Link href="/" className="mr-6 flex items-center space-x-2">
               <span className="hidden font-bold sm:inline-block">
@@ -52,7 +53,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+      <div className="container flex h-14 items-center px-4 md:px-6">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <span className="hidden font-bold sm:inline-block">
@@ -200,17 +201,19 @@ export function Navbar() {
 
         <div className="flex items-center justify-between space-x-2 md:justify-end">
           <div className="w-full flex-1 md:w-auto md:flex-none">
-            <div className="flex items-center space-x-2">
-              <span className="hidden text-sm text-muted-foreground md:inline-block">
+            <div className="flex items-center space-x-1 md:space-x-2">
+              <span className="hidden text-sm text-muted-foreground lg:inline-block">
                 Welcome, {session.user?.name || session.user?.email}
               </span>
+              <NotificationSystem userId={session.user.id} userRole={session.user.role} />
               <Link href="/auth/change-password">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="px-2 md:px-3">
                   🔐
                 </Button>
               </Link>
-              <Button onClick={() => signOut()} variant="outline" size="sm">
-                Sign Out
+              <Button onClick={() => signOut()} variant="outline" size="sm" className="px-2 md:px-3 text-xs md:text-sm">
+                <span className="hidden md:inline">Sign Out</span>
+                <span className="md:hidden">Out</span>
               </Button>
             </div>
           </div>
