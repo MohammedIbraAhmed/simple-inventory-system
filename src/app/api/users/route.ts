@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth-config'
 import { hashPassword } from '@/lib/auth-utils'
 import { sendEmail, generateWelcomeEmail } from '@/lib/email-service'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'admin') {
@@ -14,8 +14,63 @@ export async function GET() {
     }
 
     const db = await connectDB()
-    const users = await db.collection('users').find({}).toArray()
-    return NextResponse.json(users)
+    const url = new URL(request.url)
+
+    // Pagination parameters
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'))
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '25')))
+    const skip = (page - 1) * limit
+
+    // Search and filter parameters
+    const search = url.searchParams.get('search') || ''
+    const role = url.searchParams.get('role') || ''
+    const isActive = url.searchParams.get('isActive')
+
+    // Build query
+    let query: any = {}
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ]
+    }
+
+    if (role && role !== 'all') {
+      query.role = role
+    }
+
+    if (isActive !== null && isActive !== '') {
+      query.isActive = isActive === 'true'
+    }
+
+    // Get total count for pagination
+    const totalCount = await db.collection('users').countDocuments(query)
+
+    // Get paginated users with optimized query
+    const users = await db.collection('users')
+      .find(query, {
+        projection: { password: 0 } // Exclude password from response
+      })
+      .sort({ createdAt: -1 }) // Most recent first
+      .skip(skip)
+      .limit(limit)
+      .toArray()
+
+    // Response with pagination metadata
+    const response = {
+      data: users,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasNext: page < Math.ceil(totalCount / limit),
+        hasPrev: page > 1
+      }
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Fetch users error:', error)
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
@@ -45,8 +100,8 @@ export async function POST(request: NextRequest) {
 
     // Hash password if provided, otherwise use default
     const password = userData.password || 'password'
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 })
+    if (password.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters long' }, { status: 400 })
     }
     const hashedPassword = await hashPassword(password)
 

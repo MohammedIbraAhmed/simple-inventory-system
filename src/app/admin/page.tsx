@@ -40,6 +40,7 @@ export default function AdminPage() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [activeTab, setActiveTab] = useState<'users' | 'allocation'>('users')
 
   useEffect(() => {
@@ -59,14 +60,15 @@ export default function AdminPage() {
   async function fetchUsers() {
     try {
       const res = await fetch('/api/users')
-      const data = await res.json()
+      const response = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Failed to fetch users')
+        setError(response.error || 'Failed to fetch users')
         return
       }
 
-      setUsers(Array.isArray(data) ? data : [])
+      // Handle the API response structure that includes pagination
+      setUsers(response.data || [])
     } catch (err) {
       setError('Failed to fetch users')
       setUsers([])
@@ -90,13 +92,14 @@ export default function AdminPage() {
       return
     }
 
-    if (newUser.password && newUser.password.length < 6) {
-      setError('Password must be at least 6 characters long')
+    if (newUser.password && newUser.password.length < 8) {
+      setError('Password must be at least 8 characters long')
       return
     }
 
     setLoading(true)
     setError('')
+    setSuccess('')
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
@@ -109,6 +112,10 @@ export default function AdminPage() {
         setError(result.error || 'Failed to create user')
         return
       }
+
+      // Show success message
+      setSuccess('User created successfully!')
+      setError('')
 
       setNewUser({
         name: '',
@@ -208,7 +215,7 @@ export default function AdminPage() {
   const selectedProduct = Array.isArray(products) ? products.find(p => p._id === allocation.productId) : null
 
   return (
-    <div className="container px-4 py-6 md:px-6">
+    <div className="max-w-7xl mx-auto py-6">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">⚙️ Admin Dashboard</h1>
         <p className="text-muted-foreground">
@@ -233,6 +240,23 @@ export default function AdminPage() {
                 variant="ghost"
                 size="sm"
                 className="h-auto p-0"
+              >
+                ×
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Success Message */}
+        {success && (
+          <Alert variant="default" className="mb-6 border-green-200 bg-green-50">
+            <AlertDescription className="flex justify-between items-center text-green-800">
+              ✅ {success}
+              <Button
+                onClick={() => setSuccess('')}
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0 text-green-600 hover:text-green-800"
               >
                 ×
               </Button>
