@@ -47,11 +47,16 @@ export default function WorkshopsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [activeTab, setActiveTab] = useState<'workshops' | 'participants' | 'materials'>('workshops')
   const [selectedParticipantForDistribution, setSelectedParticipantForDistribution] = useState<string | null>(null)
   const [materialDistribution, setMaterialDistribution] = useState({
     productId: '',
     quantity: 0
+  })
+  const [bulkDistribution, setBulkDistribution] = useState({
+    productId: '',
+    quantityPerParticipant: 0
   })
 
   useEffect(() => {
@@ -236,6 +241,50 @@ export default function WorkshopsPage() {
     }
   }
 
+  async function bulkDistributeMaterials() {
+    if (!bulkDistribution.productId || !bulkDistribution.quantityPerParticipant || !selectedWorkshopId) {
+      setError('Please select product, quantity per participant, and ensure workshop is selected')
+      return
+    }
+
+    if (participants.length === 0) {
+      setError('No participants found for this workshop')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/distribute-materials/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workshopId: selectedWorkshopId,
+          productId: bulkDistribution.productId,
+          quantityPerParticipant: bulkDistribution.quantityPerParticipant
+        })
+      })
+
+      const result = await res.json()
+      if (!res.ok) {
+        setError(result.error || 'Failed to bulk distribute materials')
+        return
+      }
+
+      // Show success message
+      setSuccess(`Successfully distributed ${result.distributed.totalQuantity} ${result.distributed.productName} to ${result.distributed.participantCount} participants (${result.distributed.quantityPerParticipant} each)`)
+      setError('')
+
+      setBulkDistribution({ productId: '', quantityPerParticipant: 0 })
+      fetchUserBalances()
+      fetchParticipants()
+    } catch (err) {
+      setError('Failed to bulk distribute materials')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function updateWorkshop(id: string, workshop: Workshop) {
     setLoading(true)
     setError('')
@@ -291,7 +340,7 @@ export default function WorkshopsPage() {
   const totalParticipants = workshops.reduce((sum, w) => sum + (w.actualParticipants || 0), 0)
 
   return (
-    <div className="container px-4 py-6 md:px-6">
+    <div className="max-w-7xl mx-auto py-6">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">🎪 Workshop Management</h1>
         <p className="text-muted-foreground">
@@ -339,6 +388,23 @@ export default function WorkshopsPage() {
                 variant="ghost"
                 size="sm"
                 className="h-auto p-0 text-destructive hover:text-destructive"
+              >
+                ×
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Success Message */}
+        {success && (
+          <Alert variant="default" className="mb-6 border-green-200 bg-green-50">
+            <AlertDescription className="flex justify-between items-center text-green-800">
+              ✅ {success}
+              <Button
+                onClick={() => setSuccess('')}
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0 text-green-600 hover:text-green-800"
               >
                 ×
               </Button>
@@ -784,10 +850,65 @@ export default function WorkshopsPage() {
                 )}
               </div>
 
-              {/* Material Distribution Form */}
+              {/* Bulk Distribution Form */}
+              {userBalances.filter(b => b.availableQuantity > 0).length > 0 && participants.length > 0 && (
+                <div style={{ marginBottom: '20px', border: '1px solid #007cba', padding: '15px', borderRadius: '8px', backgroundColor: '#f0f8ff' }}>
+                  <h3>🚀 Bulk Distribute to ALL Participants ({participants.length} people)</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', alignItems: 'end' }}>
+                    <select
+                      value={bulkDistribution.productId}
+                      onChange={(e) => setBulkDistribution({ ...bulkDistribution, productId: e.target.value })}
+                      style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                      disabled={loading}
+                    >
+                      <option value="">Select Material</option>
+                      {userBalances.filter(b => b.availableQuantity > 0).map((balance) => (
+                        <option key={balance.productId} value={balance.productId}>
+                          {balance.productName} (Available: {balance.availableQuantity})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      placeholder="Quantity per participant"
+                      value={bulkDistribution.quantityPerParticipant}
+                      onChange={(e) => setBulkDistribution({ ...bulkDistribution, quantityPerParticipant: parseInt(e.target.value) || 0 })}
+                      style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                      disabled={loading}
+                    />
+                    <button
+                      onClick={bulkDistributeMaterials}
+                      disabled={loading || !bulkDistribution.productId || !bulkDistribution.quantityPerParticipant}
+                      style={{
+                        padding: '8px 15px',
+                        backgroundColor: loading ? '#ccc' : '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {loading ? 'Distributing...' : `Distribute to All ${participants.length}`}
+                    </button>
+                  </div>
+                  {bulkDistribution.productId && bulkDistribution.quantityPerParticipant > 0 && (
+                    <div style={{ margin: '10px 0 0 0', fontSize: '14px', color: '#666' }}>
+                      <p>📊 <strong>Distribution Summary:</strong></p>
+                      <p>• {participants.length} participants × {bulkDistribution.quantityPerParticipant} = <strong>{participants.length * bulkDistribution.quantityPerParticipant} total units needed</strong></p>
+                      <p>• Available: {userBalances.find(b => b.productId === bulkDistribution.productId)?.availableQuantity || 0} units</p>
+                      {(participants.length * bulkDistribution.quantityPerParticipant) > (userBalances.find(b => b.productId === bulkDistribution.productId)?.availableQuantity || 0) && (
+                        <p style={{ color: '#dc2626', fontWeight: 'bold' }}>⚠️ Insufficient quantity!</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Individual Material Distribution Form */}
               {userBalances.filter(b => b.availableQuantity > 0).length > 0 && participants.length > 0 && (
                 <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
-                  <h3>🎯 Distribute Materials to Participant</h3>
+                  <h3>🎯 Distribute Materials to Individual Participant</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', alignItems: 'end' }}>
                     <select
                       value={selectedParticipantForDistribution || ''}
