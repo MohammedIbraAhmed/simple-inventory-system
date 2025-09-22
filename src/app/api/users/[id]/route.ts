@@ -17,6 +17,21 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Remove _id from update data
     const { _id, ...updateData } = userData
 
+    // If email is being updated, check for uniqueness
+    if (updateData.email) {
+      const existingUser = await db.collection('users').findOne({
+        email: updateData.email,
+        _id: { $ne: new ObjectId(params.id) } // Exclude current user
+      })
+
+      if (existingUser) {
+        return NextResponse.json({ error: 'Email already exists' }, { status: 400 })
+      }
+    }
+
+    // Add updatedAt timestamp
+    updateData.updatedAt = new Date().toISOString()
+
     const result = await db.collection('users').updateOne(
       { _id: new ObjectId(params.id) },
       { $set: updateData }

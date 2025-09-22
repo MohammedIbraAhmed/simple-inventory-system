@@ -41,6 +41,16 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [testingNotifications, setTestingNotifications] = useState(false)
+  const [testingEmail, setTestingEmail] = useState(false)
+  const [testingConnection, setTestingConnection] = useState(false)
+  const [editingUser, setEditingUser] = useState<any>(null)
+  const [editUserData, setEditUserData] = useState({
+    name: '',
+    email: '',
+    role: 'user'
+  })
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'users' | 'allocation'>('users')
 
   useEffect(() => {
@@ -188,7 +198,9 @@ export default function AdminPage() {
   }
 
   async function resetUserPassword(userId: string, userEmail: string) {
-    // Will be handled by Dialog component
+    setLoading(true)
+    setError('')
+    setSuccess('')
 
     try {
       const res = await fetch('/api/auth/reset-password', {
@@ -199,13 +211,133 @@ export default function AdminPage() {
 
       const result = await res.json()
       if (res.ok) {
-        // Show success message with proper UI component
-        setError(`Password reset initiated. Reset token: ${result.resetToken}`)
+        setSuccess(`Password reset email sent to ${userEmail}. Reset token: ${result.resetToken}`)
+        setResetPasswordDialogOpen(null) // Close dialog
       } else {
         setError(result.error || 'Failed to reset password')
       }
     } catch (err) {
       setError('Failed to reset password')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function testNotifications() {
+    setTestingNotifications(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const res = await fetch('/api/notifications/create-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      const result = await res.json()
+      if (res.ok) {
+        setSuccess('Test notifications created successfully! Check the notification bell.')
+      } else {
+        setError(result.error || 'Failed to create test notifications')
+      }
+    } catch (err) {
+      setError('Failed to create test notifications')
+    } finally {
+      setTestingNotifications(false)
+    }
+  }
+
+  async function testEmailConnection() {
+    setTestingConnection(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const res = await fetch('/api/email/test-connection')
+      const result = await res.json()
+
+      if (res.ok && result.success) {
+        setSuccess('SMTP connection test successful! Email server is reachable.')
+      } else {
+        setError(`SMTP connection failed: ${result.details || result.error}`)
+        console.log('Email config:', result.config)
+      }
+    } catch (err) {
+      setError('Failed to test SMTP connection')
+    } finally {
+      setTestingConnection(false)
+    }
+  }
+
+  async function testEmail() {
+    setTestingEmail(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const res = await fetch('/api/email/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: session?.user?.email })
+      })
+
+      const result = await res.json()
+      if (res.ok && result.success) {
+        setSuccess(`Test email sent successfully to ${session?.user?.email}! Check your inbox.`)
+      } else {
+        setError(`Email test failed: ${result.message || result.error || 'Unknown error'}`)
+        console.log('Email configuration:', result.emailConfiguration)
+      }
+    } catch (err) {
+      setError('Failed to test email service')
+    } finally {
+      setTestingEmail(false)
+    }
+  }
+
+  function openEditUser(user: User) {
+    setEditingUser(user)
+    setEditUserData({
+      name: user.name,
+      email: user.email,
+      role: user.role
+    })
+  }
+
+  function closeEditUser() {
+    setEditingUser(null)
+    setEditUserData({ name: '', email: '', role: 'user' })
+  }
+
+  async function updateUser() {
+    if (!editUserData.name || !editUserData.email) {
+      setError('Name and email are required')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const res = await fetch(`/api/users/${editingUser._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editUserData)
+      })
+
+      const result = await res.json()
+      if (res.ok) {
+        setSuccess('User updated successfully')
+        closeEditUser()
+        fetchUsers()
+      } else {
+        setError(result.error || 'Failed to update user')
+      }
+    } catch (err) {
+      setError('Failed to update user')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -217,10 +349,40 @@ export default function AdminPage() {
   return (
     <div className="max-w-7xl mx-auto py-6">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">⚙️ Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Manage users, allocate stock, and oversee system operations
-        </p>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">⚙️ Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage users, allocate stock, and oversee system operations
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={testEmailConnection}
+              disabled={testingConnection}
+              variant="outline"
+              size="sm"
+            >
+              {testingConnection ? 'Testing...' : '🔌 Test SMTP'}
+            </Button>
+            <Button
+              onClick={testEmail}
+              disabled={testingEmail}
+              variant="outline"
+              size="sm"
+            >
+              {testingEmail ? 'Sending...' : '📧 Test Email'}
+            </Button>
+            <Button
+              onClick={testNotifications}
+              disabled={testingNotifications}
+              variant="outline"
+              size="sm"
+            >
+              {testingNotifications ? 'Creating...' : '🔔 Test Notifications'}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Tab Navigation */}
@@ -379,18 +541,30 @@ export default function AdminPage() {
                       <TableCell>
                         <div className="flex gap-2">
                           <Button
+                            onClick={() => openEditUser(user)}
+                            variant="outline"
+                            size="sm"
+                            title="Edit User"
+                          >
+                            ✏️
+                          </Button>
+                          <Button
                             onClick={() => toggleUserStatus(user._id!, user.isActive)}
                             variant={user.isActive ? 'destructive' : 'default'}
                             size="sm"
                           >
                             {user.isActive ? 'Deactivate' : 'Activate'}
                           </Button>
-                          <Dialog>
+                          <Dialog
+                            open={resetPasswordDialogOpen === user._id}
+                            onOpenChange={(open) => setResetPasswordDialogOpen(open ? user._id! : null)}
+                          >
                             <DialogTrigger asChild>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 title="Reset Password"
+                                onClick={() => setResetPasswordDialogOpen(user._id!)}
                               >
                                 🔑
                               </Button>
@@ -399,17 +573,22 @@ export default function AdminPage() {
                               <DialogHeader>
                                 <DialogTitle>Reset Password</DialogTitle>
                                 <DialogDescription>
-                                  Reset password for {user.email}? A new temporary password will be generated.
+                                  Reset password for {user.email}? A new temporary password will be generated and sent via email.
                                 </DialogDescription>
                               </DialogHeader>
                               <DialogFooter>
-                                <Button variant="outline">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setResetPasswordDialogOpen(null)}
+                                  disabled={loading}
+                                >
                                   Cancel
                                 </Button>
                                 <Button
                                   onClick={() => resetUserPassword(user._id!, user.email)}
+                                  disabled={loading}
                                 >
-                                  Reset Password
+                                  {loading ? 'Sending...' : 'Reset Password'}
                                 </Button>
                               </DialogFooter>
                             </DialogContent>
@@ -510,6 +689,61 @@ export default function AdminPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Edit User Dialog */}
+      <Dialog open={!!editingUser} onOpenChange={(open) => !open && closeEditUser()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user information for {editingUser?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="edit-name" className="block text-sm font-medium mb-1">Name</label>
+              <Input
+                id="edit-name"
+                value={editUserData.name}
+                onChange={(e) => setEditUserData({ ...editUserData, name: e.target.value })}
+                placeholder="User name"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label htmlFor="edit-email" className="block text-sm font-medium mb-1">Email</label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editUserData.email}
+                onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })}
+                placeholder="user@example.com"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label htmlFor="edit-role" className="block text-sm font-medium mb-1">Role</label>
+              <Select value={editUserData.role} onValueChange={(value) => setEditUserData({ ...editUserData, role: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">👤 User</SelectItem>
+                  <SelectItem value="admin">⚙️ Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEditUser} disabled={loading}>
+              Cancel
+            </Button>
+            <Button onClick={updateUser} disabled={loading}>
+              {loading ? 'Updating...' : 'Update User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
