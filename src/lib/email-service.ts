@@ -48,13 +48,36 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 
     const transporter = createTransporter()
 
-    // Test connection first
+    // Test connection first with timeout
     console.log('🔍 Testing SMTP connection...')
     try {
-      await transporter.verify()
+      // Add timeout for connection test
+      const verifyPromise = transporter.verify()
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('SMTP connection timeout after 10 seconds')), 10000)
+      )
+
+      await Promise.race([verifyPromise, timeoutPromise])
       console.log('✅ SMTP connection verified')
     } catch (verifyError) {
       console.error('❌ SMTP connection failed:', verifyError)
+
+      // Log detailed error information
+      if (verifyError instanceof Error) {
+        console.error('Error message:', verifyError.message)
+        console.error('Error stack:', verifyError.stack)
+      }
+
+      // Try to provide helpful error messages
+      const errorMessage = verifyError instanceof Error ? verifyError.message : 'Unknown error'
+      if (errorMessage.includes('ECONNREFUSED')) {
+        console.error('💡 Hint: Connection refused - check if SMTP server is reachable and port is correct')
+      } else if (errorMessage.includes('ENOTFOUND')) {
+        console.error('💡 Hint: Host not found - check EMAIL_HOST setting')
+      } else if (errorMessage.includes('Invalid login')) {
+        console.error('💡 Hint: Authentication failed - check EMAIL_USER and EMAIL_PASS')
+      }
+
       throw verifyError
     }
 
@@ -80,11 +103,22 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     console.error('  EMAIL_FROM:', process.env.EMAIL_FROM)
     console.error('  EMAIL_SECURE:', process.env.EMAIL_SECURE)
 
-    // Fallback to logging for development
+    // Fallback to logging for development - show reset link in console
     console.log('📧 Email would be sent (fallback):')
     console.log('To:', options.to)
     console.log('Subject:', options.subject)
     console.log('Content:', options.text || options.html)
+
+    // For password reset emails, extract and show the reset link prominently
+    if (options.subject.includes('Password Reset') && options.html) {
+      const linkMatch = options.html.match(/href="([^"]*reset-password[^"]*)"/)
+      if (linkMatch) {
+        console.log('')
+        console.log('🔗 PASSWORD RESET LINK (copy this to test):')
+        console.log(linkMatch[1])
+        console.log('')
+      }
+    }
 
     return false
   }
