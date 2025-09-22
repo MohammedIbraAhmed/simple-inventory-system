@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { SessionProvider } from './providers'
-import { Navbar } from '@/components/navbar'
-import { Footer } from '@/components/footer'
+import { LayoutContent } from '@/components/layout-content'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
@@ -19,11 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen bg-white font-sans antialiased">
         <SessionProvider>
-          <div className="relative flex min-h-screen flex-col">
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <LayoutContent>{children}</LayoutContent>
           <Toaster />
         </SessionProvider>
       </body>

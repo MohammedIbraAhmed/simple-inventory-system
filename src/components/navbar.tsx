@@ -55,7 +55,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center px-4 md:px-6">
         <div className="mr-4 hidden md:flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
+          <Link href="/dashboard" className="mr-6 flex items-center space-x-2">
             <span className="hidden font-bold sm:inline-block">
               📦 Inventory System
             </span>
@@ -63,8 +63,8 @@ export function Navbar() {
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
-                <Link href="/" legacyBehavior passHref>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), pathname === '/' && 'bg-accent text-accent-foreground')}>
+                <Link href="/dashboard" legacyBehavior passHref>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), pathname === '/dashboard' && 'bg-accent text-accent-foreground')}>
                     🏠 Dashboard
                   </NavigationMenuLink>
                 </Link>
@@ -161,7 +161,7 @@ export function Navbar() {
                       <li>
                         <NavigationMenuLink asChild>
                           <Link
-                            href="/"
+                            href="/dashboard"
                             className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           >
                             <div className="text-sm font-medium leading-none">📦 Inventory Management</div>
@@ -194,7 +194,7 @@ export function Navbar() {
 
         {/* Mobile menu button - simple version for now */}
         <div className="flex flex-1 items-center justify-between space-x-2 md:hidden">
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/dashboard" className="flex items-center space-x-2">
             <span className="font-bold">📦 Inventory</span>
           </Link>
         </div>

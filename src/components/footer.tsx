@@ -3,9 +3,9 @@ import { Separator } from '@/components/ui/separator'
 
 export function Footer() {
   return (
-    <footer className="w-full border-t bg-background">
-      <div className="container">
-        <div className="grid gap-8 px-4 py-8 md:grid-cols-4">
+    <footer className="w-full border-t bg-background px-4 md:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid gap-8 py-8 md:grid-cols-4">
           {/* Brand Section */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">📦 Inventory System</h3>
@@ -19,7 +19,7 @@ export function Footer() {
             <h4 className="text-sm font-semibold">Quick Links</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
                   Dashboard
                 </Link>
               </li>
@@ -68,24 +68,21 @@ export function Footer() {
         <Separator />
 
         {/* Bottom Section */}
-        <div className="flex flex-col items-center justify-between gap-4 py-6 md:flex-row">
-          <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
+        <div className="flex flex-col items-center justify-between gap-4 py-4 md:flex-row">
+          <div className="flex flex-col items-center gap-4 md:flex-row md:gap-2">
             <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-              © 2024 Inventory Management System. All rights reserved.
+              © 2024 Dozdan.com. All rights reserved.
             </p>
           </div>
 
           <div className="flex flex-col items-center gap-2 text-center md:text-right">
             <p className="text-sm text-muted-foreground">
               Developed with ❤️ by{' '}
-              <span className="font-semibold text-foreground">Mohammed Ahmed</span>
-            </p>
-            <p className="text-xs text-muted-foreground">
               <a
                 href="mailto:mohammed@dozdan.com"
-                className="hover:text-foreground transition-colors underline decoration-dotted"
+                className="font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
               >
-                mohammed@dozdan.com
+                Mohammed Ahmed
               </a>
             </p>
           </div>
