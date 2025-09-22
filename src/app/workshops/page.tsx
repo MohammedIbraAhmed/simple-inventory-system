@@ -779,15 +779,16 @@ export default function WorkshopsPage() {
                                   {participant.specialStatus.isSeparated && <Badge variant="outline">💔 Separated</Badge>}
                                   {participant.specialStatus.isUnaccompanied && <Badge variant="default">👤 Unaccompanied</Badge>}
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                  Status: <Badge
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span>Status:</span>
+                                  <Badge
                                     variant={participant.attendanceStatus === 'attended' ? 'default' :
                                            participant.attendanceStatus === 'no-show' ? 'destructive' : 'secondary'}
                                   >
                                     {participant.attendanceStatus === 'registered' ? '📝 Registered' :
                                      participant.attendanceStatus === 'attended' ? '✅ Attended' : '❌ No Show'}
                                   </Badge>
-                                </p>
+                                </div>
                               </div>
                               <div className="flex gap-2">
                                 <Button variant="outline" size="sm">Edit</Button>

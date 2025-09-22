@@ -3,12 +3,84 @@ import { connectDB } from '@/lib/db'
 import { Product } from '@/types/product'
 import { createAuthHandler, AuthSession } from '@/lib/auth-middleware'
 import { validateData, ProductSchema } from '@/lib/validations'
+import { withCache, cacheKeys, invalidateCache } from '@/lib/cache'
 
 async function handleGetProducts(request: NextRequest, session: AuthSession) {
   try {
-    const db = await connectDB()
-    const products = await db.collection('products').find({}).toArray()
-    return NextResponse.json(products)
+    const url = new URL(request.url)
+
+    // Pagination parameters
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'))
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50')))
+    const skip = (page - 1) * limit
+
+    // Search and filter parameters
+    const search = url.searchParams.get('search') || ''
+    const category = url.searchParams.get('category') || ''
+    const lowStock = url.searchParams.get('lowStock') === 'true'
+
+    // Generate cache key for this specific query
+    const cacheKey = cacheKeys.products.list(page, limit, search, category)
+
+    // Add lowStock to cache key if needed
+    const fullCacheKey = lowStock ? `${cacheKey}:lowStock` : cacheKey
+
+    // Try to get cached response
+    const cachedResponse = await withCache(
+      fullCacheKey,
+      async () => {
+        const db = await connectDB()
+
+        // Build query
+        let query: any = {}
+
+        if (search) {
+          query.$text = { $search: search }
+        }
+
+        if (category && category !== 'all') {
+          query.category = category
+        }
+
+        if (lowStock) {
+          query.stock = { $lt: 10 }
+        }
+
+        // Get total count for pagination (cached separately for efficiency)
+        const countCacheKey = cacheKeys.products.count(search, category)
+        const totalCount = await withCache(
+          lowStock ? `${countCacheKey}:lowStock` : countCacheKey,
+          async () => {
+            return await db.collection('products').countDocuments(query)
+          },
+          300 // 5 minute cache for counts
+        )
+
+        // Get paginated products with optimized query
+        const products = await db.collection('products')
+          .find(query)
+          .sort({ createdAt: -1 }) // Most recent first - this will use the new index
+          .skip(skip)
+          .limit(limit)
+          .toArray()
+
+        // Response with pagination metadata
+        return {
+          data: products,
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages: Math.ceil(totalCount / limit),
+            hasNext: page < Math.ceil(totalCount / limit),
+            hasPrev: page > 1
+          }
+        }
+      },
+      300 // 5 minute cache for product lists
+    )
+
+    return NextResponse.json(cachedResponse)
   } catch (error) {
     console.error('Fetch error:', error)
     return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
@@ -48,6 +120,9 @@ async function handleCreateProduct(request: NextRequest, session: AuthSession) {
 
     const result = await db.collection('products').insertOne(productWithMetadata)
 
+    // Invalidate product cache since we added a new product
+    invalidateCache.products()
+
     // Log the action for audit trail
     await db.collection('audit_logs').insertOne({
       action: 'CREATE_PRODUCT',
@@ -66,6 +141,6 @@ async function handleCreateProduct(request: NextRequest, session: AuthSession) {
   }
 }
 
-// Admin-only access for main stock management
-export const GET = createAuthHandler(handleGetProducts, 'admin')
+// All authenticated users can view products, only admins can create
+export const GET = createAuthHandler(handleGetProducts, 'any')
 export const POST = createAuthHandler(handleCreateProduct, 'admin')
