@@ -6,16 +6,31 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI
 const options = {
-  maxPoolSize: 10, // Maintain up to 10 socket connections
-  serverSelectionTimeoutMS: 30000, // Keep trying to send operations for 30 seconds (Atlas needs more time)
-  socketTimeoutMS: 45000, // Close connections after 45 seconds of inactivity
-  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-  connectTimeoutMS: 30000, // Give 30 seconds for initial connection
+  // Connection pool optimization for better concurrency
+  maxPoolSize: 25, // Increased from 10 to support more concurrent users
+  minPoolSize: 5, // Maintain minimum connections for faster response
+
+  // Timeout optimization for faster failure detection
+  serverSelectionTimeoutMS: 10000, // Reduced from 30000 for faster failure detection
+  socketTimeoutMS: 20000, // Reduced from 45000 for quicker timeout
+  maxIdleTimeMS: 30000, // Keep idle connection timeout
+  connectTimeoutMS: 10000, // Reduced from 30000 for faster initial connection
+
+  // Reliability features
   retryWrites: true, // Retry failed writes
   retryReads: true, // Retry failed reads
-  // Atlas-specific options
+
+  // Atlas-specific optimizations
   ssl: true, // Enable SSL for Atlas
-  appName: 'InventoryManagementSystem', // Application name for Atlas monitoring
+  appName: 'InventoryManagementSystem_v2', // Updated app name for monitoring
+
+  // Performance optimizations
+  maxConnecting: 5, // Limit concurrent connection attempts
+  heartbeatFrequencyMS: 30000, // Health check frequency
+
+  // Compression for better network performance
+  compressors: ['zlib'], // Enable compression for better network utilization
+  zlibCompressionLevel: 6, // Balanced compression level
 }
 
 let client: MongoClient

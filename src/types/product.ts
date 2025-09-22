@@ -8,6 +8,30 @@ export interface Product {
   notes?: string
 }
 
+export interface Location {
+  _id?: string
+  name: string
+  type: string
+  governorate: string
+  neighborhood: string
+  gpsCoordinates: {
+    latitude: number
+    longitude: number
+  }
+  siteManager: {
+    name: string
+    phoneNumber: string
+  }
+  demographics: {
+    numberOfPeople: number
+    numberOfChildren: number
+  }
+  region: 'Gaza Strip'
+  createdAt: string
+  updatedAt: string
+  isActive: boolean
+}
+
 export interface Workshop {
   _id?: string
   title: string
@@ -15,7 +39,9 @@ export interface Workshop {
   date: string
   startTime: string
   endTime: string
-  location: string
+  locationId: string
+  locationName?: string // Populated field for display
+  locationNeighborhood?: string // Populated field for display
   conductedBy: string // user ID who created it
   status: 'planned' | 'ongoing' | 'completed' | 'cancelled'
   expectedParticipants: number

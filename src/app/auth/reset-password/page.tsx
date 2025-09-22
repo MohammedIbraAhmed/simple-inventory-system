@@ -39,10 +39,7 @@ function ResetPasswordContent() {
 
       if (res.ok) {
         setMessage('If the email exists, a reset link has been sent.')
-        // In development, show the token
-        if (result.resetToken) {
-          setMessage(prev => prev + ` Reset token: ${result.resetToken}`)
-        }
+        // Token removed for security - should never be displayed in UI
       } else {
         setError(result.error || 'Failed to send reset email')
       }
@@ -65,8 +62,8 @@ function ResetPasswordContent() {
       return
     }
 
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long')
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long')
       return
     }
 

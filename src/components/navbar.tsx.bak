@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
-import { NotificationSystem } from '@/components/notification-system'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,7 +27,7 @@ export function Navbar() {
   if (status === 'loading') {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center px-4 md:px-6">
+        <div className="container flex h-14 items-center">
           <div className="mr-4 hidden md:flex">
             <Link href="/" className="mr-6 flex items-center space-x-2">
               <span className="hidden font-bold sm:inline-block">
@@ -53,9 +52,9 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center px-4 md:px-6">
+      <div className="container flex h-14 items-center">
         <div className="mr-4 hidden md:flex">
-          <Link href="/dashboard" className="mr-6 flex items-center space-x-2">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
             <span className="hidden font-bold sm:inline-block">
               📦 Inventory System
             </span>
@@ -63,8 +62,8 @@ export function Navbar() {
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
-                <Link href="/dashboard" legacyBehavior passHref>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), pathname === '/dashboard' && 'bg-accent text-accent-foreground')}>
+                <Link href="/" legacyBehavior passHref>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), pathname === '/' && 'bg-accent text-accent-foreground')}>
                     🏠 Dashboard
                   </NavigationMenuLink>
                 </Link>
@@ -161,7 +160,7 @@ export function Navbar() {
                       <li>
                         <NavigationMenuLink asChild>
                           <Link
-                            href="/dashboard"
+                            href="/"
                             className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           >
                             <div className="text-sm font-medium leading-none">📦 Inventory Management</div>
@@ -184,19 +183,6 @@ export function Navbar() {
                           </Link>
                         </NavigationMenuLink>
                       </li>
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <Link
-                            href="/locations"
-                            className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                          >
-                            <div className="text-sm font-medium leading-none">📍 Location Management</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Manage workshop locations across Gaza Strip.
-                            </p>
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
                     </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
@@ -207,26 +193,24 @@ export function Navbar() {
 
         {/* Mobile menu button - simple version for now */}
         <div className="flex flex-1 items-center justify-between space-x-2 md:hidden">
-          <Link href="/dashboard" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2">
             <span className="font-bold">📦 Inventory</span>
           </Link>
         </div>
 
         <div className="flex items-center justify-between space-x-2 md:justify-end">
           <div className="w-full flex-1 md:w-auto md:flex-none">
-            <div className="flex items-center space-x-1 md:space-x-2">
-              <span className="hidden text-sm text-muted-foreground lg:inline-block">
+            <div className="flex items-center space-x-2">
+              <span className="hidden text-sm text-muted-foreground md:inline-block">
                 Welcome, {session.user?.name || session.user?.email}
               </span>
-              <NotificationSystem userId={session.user.id} userRole={session.user.role} />
               <Link href="/auth/change-password">
-                <Button variant="ghost" size="sm" className="px-2 md:px-3">
+                <Button variant="ghost" size="sm">
                   🔐
                 </Button>
               </Link>
-              <Button onClick={() => signOut()} variant="outline" size="sm" className="px-2 md:px-3 text-xs md:text-sm">
-                <span className="hidden md:inline">Sign Out</span>
-                <span className="md:hidden">Out</span>
+              <Button onClick={() => signOut()} variant="outline" size="sm">
+                Sign Out
               </Button>
             </div>
           </div>

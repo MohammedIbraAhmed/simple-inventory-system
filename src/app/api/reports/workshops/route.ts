@@ -20,18 +20,49 @@ async function handleGetWorkshopReports(request: NextRequest, session: AuthSessi
     // Get workshops with detailed information
     const workshops = await db.collection('workshops').find(workshopQuery).toArray()
 
-    // Enhance each workshop with participant details and material distribution
-    const detailedReports = await Promise.all(workshops.map(async (workshop) => {
-      // Get participants for this workshop
-      const participants = await db.collection('participants').find({
-        workshopId: workshop._id!.toString()
-      }).toArray()
+    if (workshops.length === 0) {
+      return NextResponse.json([])
+    }
 
-      // Get stock transactions for this workshop
-      const transactions = await db.collection('stockTransactions').find({
-        workshopId: workshop._id!.toString(),
-        type: 'distribution'
-      }).toArray()
+    // Optimized: Batch fetch all participants and transactions to eliminate N+1 queries
+    const workshopIds = workshops.map(w => w._id!.toString())
+
+    // Single query to get all participants for all workshops
+    const allParticipants = await db.collection('participants').find({
+      workshopId: { $in: workshopIds }
+    }).toArray()
+
+    // Single query to get all stock transactions for all workshops
+    const allTransactions = await db.collection('stockTransactions').find({
+      workshopId: { $in: workshopIds },
+      type: 'distribution'
+    }).toArray()
+
+    // Group participants and transactions by workshop ID for O(1) lookup
+    const participantsByWorkshop = new Map<string, any[]>()
+    const transactionsByWorkshop = new Map<string, any[]>()
+
+    allParticipants.forEach(participant => {
+      const workshopId = participant.workshopId
+      if (!participantsByWorkshop.has(workshopId)) {
+        participantsByWorkshop.set(workshopId, [])
+      }
+      participantsByWorkshop.get(workshopId)!.push(participant)
+    })
+
+    allTransactions.forEach(transaction => {
+      const workshopId = transaction.workshopId
+      if (!transactionsByWorkshop.has(workshopId)) {
+        transactionsByWorkshop.set(workshopId, [])
+      }
+      transactionsByWorkshop.get(workshopId)!.push(transaction)
+    })
+
+    // Now process workshops with O(1) lookups instead of N queries
+    const detailedReports = workshops.map((workshop) => {
+      const workshopId = workshop._id!.toString()
+      const participants = participantsByWorkshop.get(workshopId) || []
+      const transactions = transactionsByWorkshop.get(workshopId) || []
 
       // Calculate statistics
       const totalParticipants = participants.length
@@ -103,7 +134,7 @@ async function handleGetWorkshopReports(request: NextRequest, session: AuthSessi
           _id: t._id!.toString()
         }))
       }
-    }))
+    })
 
     return NextResponse.json(detailedReports)
   } catch (error) {

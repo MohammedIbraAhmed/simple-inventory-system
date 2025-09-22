@@ -19,7 +19,7 @@ export const WorkshopSchema = z.object({
   date: z.string().min(1, 'Date is required'),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
-  location: z.string().min(1, 'Location is required').max(200, 'Location too long'),
+  locationId: z.string().min(1, 'Location is required'),
   conductedBy: z.string().min(1, 'Conductor ID is required'),
   status: z.enum(['planned', 'ongoing', 'completed', 'cancelled']),
   expectedParticipants: z.number().int().min(0, 'Expected participants cannot be negative'),
@@ -32,6 +32,31 @@ export const WorkshopSchema = z.object({
   })),
   createdAt: z.string(),
   notes: z.string().max(500, 'Notes too long').optional()
+})
+
+// Location validation schema
+export const LocationSchema = z.object({
+  _id: z.string().optional(),
+  name: z.string().min(1, 'Location name is required').max(200, 'Location name too long'),
+  type: z.string().min(1, 'Location type is required').max(100, 'Location type too long'),
+  governorate: z.string().min(1, 'Governorate is required').max(100, 'Governorate too long'),
+  neighborhood: z.string().min(1, 'Neighborhood is required').max(200, 'Neighborhood too long'),
+  gpsCoordinates: z.object({
+    latitude: z.number().min(-90, 'Invalid latitude').max(90, 'Invalid latitude'),
+    longitude: z.number().min(-180, 'Invalid longitude').max(180, 'Invalid longitude')
+  }),
+  siteManager: z.object({
+    name: z.string().min(1, 'Site manager name is required').max(100, 'Name too long'),
+    phoneNumber: z.string().min(1, 'Phone number is required').max(20, 'Phone number too long')
+  }),
+  demographics: z.object({
+    numberOfPeople: z.number().int().min(0, 'Number of people cannot be negative'),
+    numberOfChildren: z.number().int().min(0, 'Number of children cannot be negative')
+  }),
+  region: z.literal('Gaza Strip'),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  isActive: z.boolean()
 })
 
 // User validation schema

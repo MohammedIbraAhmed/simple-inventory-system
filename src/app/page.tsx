@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Footer } from '@/components/footer'
 
@@ -18,7 +18,6 @@ export default function LandingPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     if (session) {
@@ -29,7 +28,6 @@ export default function LandingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError('')
 
     try {
       const result = await signIn('credentials', {
@@ -41,10 +39,10 @@ export default function LandingPage() {
       if (result?.ok) {
         router.push('/dashboard')
       } else {
-        setError('Invalid email or password. Please try again.')
+        toast.error('Invalid email or password. Please try again.')
       }
     } catch (err) {
-      setError('An error occurred. Please try again.')
+      toast.error('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -159,11 +157,6 @@ export default function LandingPage() {
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                      {error && (
-                        <Alert variant="destructive">
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
 
                       <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>

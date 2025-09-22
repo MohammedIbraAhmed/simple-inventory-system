@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Workshop, Participant, UserBalance, Product } from '@/types/product'
+import { Workshop, Participant, UserBalance, Product, Location } from '@/types/product'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { LocationSelect } from '@/components/location-select'
 import { toast } from 'sonner'
 
 export default function WorkshopsPage() {
@@ -30,7 +31,7 @@ export default function WorkshopsPage() {
     date: '',
     startTime: '',
     endTime: '',
-    location: '',
+    locationId: '',
     expectedParticipants: 0,
     status: 'planned' as 'planned' | 'ongoing' | 'completed' | 'cancelled'
   })
@@ -121,7 +122,7 @@ export default function WorkshopsPage() {
   }
 
   async function addWorkshop() {
-    if (!newWorkshop.title || !newWorkshop.date || !newWorkshop.startTime || !newWorkshop.endTime || !newWorkshop.location) {
+    if (!newWorkshop.title || !newWorkshop.date || !newWorkshop.startTime || !newWorkshop.endTime || !newWorkshop.locationId) {
       toast.error('Title, date, start time, end time, and location are required')
       return
     }
@@ -148,7 +149,7 @@ export default function WorkshopsPage() {
         date: '',
         startTime: '',
         endTime: '',
-        location: '',
+        locationId: '',
         expectedParticipants: 0,
         status: 'planned'
       })
@@ -423,10 +424,10 @@ export default function WorkshopsPage() {
                   onChange={(e) => setNewWorkshop({ ...newWorkshop, endTime: e.target.value })}
                   disabled={loading}
                 />
-                <Input
-                  placeholder="Location"
-                  value={newWorkshop.location}
-                  onChange={(e) => setNewWorkshop({ ...newWorkshop, location: e.target.value })}
+                <LocationSelect
+                  value={newWorkshop.locationId}
+                  onValueChange={(locationId) => setNewWorkshop({ ...newWorkshop, locationId })}
+                  placeholder="Select Location"
                   disabled={loading}
                 />
                 <Input
@@ -620,7 +621,7 @@ export default function WorkshopsPage() {
                 <SelectContent>
                   {workshops.map((workshop) => (
                     <SelectItem key={workshop._id} value={workshop._id}>
-                      {workshop.title} - {workshop.date} at {workshop.location}
+                      {workshop.title} - {workshop.date} at {workshop.locationName || 'Unknown Location'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -805,7 +806,7 @@ export default function WorkshopsPage() {
               <option value="">Choose a workshop...</option>
               {workshops.map((workshop) => (
                 <option key={workshop._id} value={workshop._id}>
-                  {workshop.title} - {workshop.date} at {workshop.location}
+                  {workshop.title} - {workshop.date} at {workshop.locationName || 'Unknown Location'}
                 </option>
               ))}
             </select>

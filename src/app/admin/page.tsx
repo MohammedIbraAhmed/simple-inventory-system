@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -39,8 +39,6 @@ export default function AdminPage() {
     notes: ''
   })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [testingNotifications, setTestingNotifications] = useState(false)
   const [testingEmail, setTestingEmail] = useState(false)
   const [testingConnection, setTestingConnection] = useState(false)
@@ -73,14 +71,14 @@ export default function AdminPage() {
       const response = await res.json()
 
       if (!res.ok) {
-        setError(response.error || 'Failed to fetch users')
+        toast.error(response.error || 'Failed to fetch users')
         return
       }
 
       // Handle the API response structure that includes pagination
       setUsers(response.data || [])
     } catch (err) {
-      setError('Failed to fetch users')
+      toast.error('Failed to fetch users')
       setUsers([])
     }
   }
@@ -92,24 +90,22 @@ export default function AdminPage() {
       // Handle the API response structure that includes pagination
       setProducts(response.data || [])
     } catch (err) {
-      setError('Failed to fetch products')
+      toast.error('Failed to fetch products')
     }
   }
 
   async function createUser() {
     if (!newUser.name || !newUser.email) {
-      setError('Name and email are required')
+      toast.error('Name and email are required')
       return
     }
 
     if (newUser.password && newUser.password.length < 8) {
-      setError('Password must be at least 8 characters long')
+      toast.error('Password must be at least 8 characters long')
       return
     }
 
     setLoading(true)
-    setError('')
-    setSuccess('')
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
@@ -119,13 +115,11 @@ export default function AdminPage() {
 
       const result = await res.json()
       if (!res.ok) {
-        setError(result.error || 'Failed to create user')
+        toast.error(result.error || 'Failed to create user')
         return
       }
 
-      // Show success message
-      setSuccess('User created successfully!')
-      setError('')
+      toast.success('User created successfully!')
 
       setNewUser({
         name: '',
@@ -140,7 +134,7 @@ export default function AdminPage() {
       })
       fetchUsers()
     } catch (err) {
-      setError('Failed to create user')
+      toast.error('Failed to create user')
     } finally {
       setLoading(false)
     }
@@ -148,12 +142,11 @@ export default function AdminPage() {
 
   async function allocateStock() {
     if (!allocation.userId || !allocation.productId || !allocation.quantity) {
-      setError('User, product, and quantity are required')
+      toast.error('User, product, and quantity are required')
       return
     }
 
     setLoading(true)
-    setError('')
     try {
       const res = await fetch('/api/user-balances', {
         method: 'POST',
@@ -163,9 +156,11 @@ export default function AdminPage() {
 
       const result = await res.json()
       if (!res.ok) {
-        setError(result.error || 'Failed to allocate stock')
+        toast.error(result.error || 'Failed to allocate stock')
         return
       }
+
+      toast.success('Stock allocated successfully!')
 
       setAllocation({
         userId: '',
@@ -175,7 +170,7 @@ export default function AdminPage() {
       })
       fetchProducts() // Refresh to see updated stock levels
     } catch (err) {
-      setError('Failed to allocate stock')
+      toast.error('Failed to allocate stock')
     } finally {
       setLoading(false)
     }
@@ -193,14 +188,12 @@ export default function AdminPage() {
         fetchUsers()
       }
     } catch (err) {
-      setError('Failed to update user status')
+      toast.error('Failed to update user status')
     }
   }
 
   async function resetUserPassword(userId: string, userEmail: string) {
     setLoading(true)
-    setError('')
-    setSuccess('')
 
     try {
       const res = await fetch('/api/auth/reset-password', {
@@ -211,13 +204,13 @@ export default function AdminPage() {
 
       const result = await res.json()
       if (res.ok) {
-        setSuccess(`Password reset email sent to ${userEmail}. Reset token: ${result.resetToken}`)
+        toast.success(`Password reset email sent to ${userEmail}. Please check your email for the reset link.`)
         setResetPasswordDialogOpen(null) // Close dialog
       } else {
-        setError(result.error || 'Failed to reset password')
+        toast.error(result.error || 'Failed to reset password')
       }
     } catch (err) {
-      setError('Failed to reset password')
+      toast.error('Failed to reset password')
     } finally {
       setLoading(false)
     }
@@ -225,8 +218,6 @@ export default function AdminPage() {
 
   async function testNotifications() {
     setTestingNotifications(true)
-    setError('')
-    setSuccess('')
 
     try {
       const res = await fetch('/api/notifications/create-test', {
@@ -236,12 +227,12 @@ export default function AdminPage() {
 
       const result = await res.json()
       if (res.ok) {
-        setSuccess('Test notifications created successfully! Check the notification bell.')
+        toast.success('Test notifications created successfully! Check the notification bell.')
       } else {
-        setError(result.error || 'Failed to create test notifications')
+        toast.error(result.error || 'Failed to create test notifications')
       }
     } catch (err) {
-      setError('Failed to create test notifications')
+      toast.error('Failed to create test notifications')
     } finally {
       setTestingNotifications(false)
     }
@@ -249,21 +240,19 @@ export default function AdminPage() {
 
   async function testEmailConnection() {
     setTestingConnection(true)
-    setError('')
-    setSuccess('')
 
     try {
       const res = await fetch('/api/email/test-connection')
       const result = await res.json()
 
       if (res.ok && result.success) {
-        setSuccess('SMTP connection test successful! Email server is reachable.')
+        toast.success('SMTP connection test successful! Email server is reachable.')
       } else {
-        setError(`SMTP connection failed: ${result.details || result.error}`)
+        toast.error(`SMTP connection failed: ${result.details || result.error}`)
         console.log('Email config:', result.config)
       }
     } catch (err) {
-      setError('Failed to test SMTP connection')
+      toast.error('Failed to test SMTP connection')
     } finally {
       setTestingConnection(false)
     }
@@ -271,8 +260,6 @@ export default function AdminPage() {
 
   async function testEmail() {
     setTestingEmail(true)
-    setError('')
-    setSuccess('')
 
     try {
       const res = await fetch('/api/email/test', {
@@ -283,13 +270,13 @@ export default function AdminPage() {
 
       const result = await res.json()
       if (res.ok && result.success) {
-        setSuccess(`Test email sent successfully to ${session?.user?.email}! Check your inbox.`)
+        toast.success(`Test email sent successfully to ${session?.user?.email}! Check your inbox.`)
       } else {
-        setError(`Email test failed: ${result.message || result.error || 'Unknown error'}`)
+        toast.error(`Email test failed: ${result.message || result.error || 'Unknown error'}`)
         console.log('Email configuration:', result.emailConfiguration)
       }
     } catch (err) {
-      setError('Failed to test email service')
+      toast.error('Failed to test email service')
     } finally {
       setTestingEmail(false)
     }
@@ -311,13 +298,11 @@ export default function AdminPage() {
 
   async function updateUser() {
     if (!editUserData.name || !editUserData.email) {
-      setError('Name and email are required')
+      toast.error('Name and email are required')
       return
     }
 
     setLoading(true)
-    setError('')
-    setSuccess('')
 
     try {
       const res = await fetch(`/api/users/${editingUser._id}`, {
@@ -328,14 +313,14 @@ export default function AdminPage() {
 
       const result = await res.json()
       if (res.ok) {
-        setSuccess('User updated successfully')
+        toast.success('User updated successfully')
         closeEditUser()
         fetchUsers()
       } else {
-        setError(result.error || 'Failed to update user')
+        toast.error(result.error || 'Failed to update user')
       }
     } catch (err) {
-      setError('Failed to update user')
+      toast.error('Failed to update user')
     } finally {
       setLoading(false)
     }
@@ -392,39 +377,6 @@ export default function AdminPage() {
           <TabsTrigger value="allocation">📤 Stock Allocation</TabsTrigger>
         </TabsList>
 
-        {/* Error Message */}
-        {error && (
-          <Alert variant={error.includes('Reset token') ? 'default' : 'destructive'} className="mb-6">
-            <AlertDescription className="flex justify-between items-center">
-              {error}
-              <Button
-                onClick={() => setError('')}
-                variant="ghost"
-                size="sm"
-                className="h-auto p-0"
-              >
-                ×
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Success Message */}
-        {success && (
-          <Alert variant="default" className="mb-6 border-green-200 bg-green-50">
-            <AlertDescription className="flex justify-between items-center text-green-800">
-              ✅ {success}
-              <Button
-                onClick={() => setSuccess('')}
-                variant="ghost"
-                size="sm"
-                className="h-auto p-0 text-green-600 hover:text-green-800"
-              >
-                ×
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
 
         <TabsContent value="users" className="space-y-6">
           {/* Create User Form */}
