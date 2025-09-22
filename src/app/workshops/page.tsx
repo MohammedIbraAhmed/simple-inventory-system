@@ -9,11 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { toast } from 'sonner'
 
 export default function WorkshopsPage() {
   const { data: session, status } = useSession()
@@ -46,8 +47,6 @@ export default function WorkshopsPage() {
   })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [activeTab, setActiveTab] = useState<'workshops' | 'participants' | 'materials'>('workshops')
   const [selectedParticipantForDistribution, setSelectedParticipantForDistribution] = useState<string | null>(null)
   const [materialDistribution, setMaterialDistribution] = useState({
@@ -79,13 +78,12 @@ export default function WorkshopsPage() {
 
   async function fetchWorkshops() {
     setLoading(true)
-    setError('')
     try {
       const res = await fetch('/api/workshops')
       const data = await res.json()
       setWorkshops(data)
     } catch (err) {
-      setError('Failed to fetch workshops')
+      toast.error('Failed to fetch workshops')
     } finally {
       setLoading(false)
     }
@@ -124,12 +122,11 @@ export default function WorkshopsPage() {
 
   async function addWorkshop() {
     if (!newWorkshop.title || !newWorkshop.date || !newWorkshop.startTime || !newWorkshop.endTime || !newWorkshop.location) {
-      setError('Title, date, start time, end time, and location are required')
+      toast.error('Title, date, start time, end time, and location are required')
       return
     }
 
     setLoading(true)
-    setError('')
     try {
       const res = await fetch('/api/workshops', {
         method: 'POST',
@@ -139,9 +136,11 @@ export default function WorkshopsPage() {
 
       const result = await res.json()
       if (!res.ok) {
-        setError(result.error || 'Failed to add workshop')
+        toast.error(result.error || 'Failed to add workshop')
         return
       }
+
+      toast.success('Workshop created successfully!')
 
       setNewWorkshop({
         title: '',
@@ -155,7 +154,7 @@ export default function WorkshopsPage() {
       })
       fetchWorkshops()
     } catch (err) {
-      setError('Failed to add workshop')
+      toast.error('Failed to add workshop')
     } finally {
       setLoading(false)
     }
@@ -163,12 +162,11 @@ export default function WorkshopsPage() {
 
   async function addParticipant() {
     if (!selectedWorkshopId || !newParticipant.name || !newParticipant.age || !newParticipant.phoneNumber) {
-      setError('Please select a workshop and fill in all required participant fields')
+      toast.error('Please select a workshop and fill in all required participant fields')
       return
     }
 
     setLoading(true)
-    setError('')
     try {
       const res = await fetch('/api/participants', {
         method: 'POST',
@@ -181,9 +179,11 @@ export default function WorkshopsPage() {
 
       const result = await res.json()
       if (!res.ok) {
-        setError(result.error || 'Failed to add participant')
+        toast.error(result.error || 'Failed to add participant')
         return
       }
+
+      toast.success(`Participant ${newParticipant.name} registered successfully!`)
 
       setNewParticipant({
         name: '',
@@ -198,7 +198,7 @@ export default function WorkshopsPage() {
       })
       fetchParticipants()
     } catch (err) {
-      setError('Failed to add participant')
+      toast.error('Failed to add participant')
     } finally {
       setLoading(false)
     }
@@ -206,12 +206,11 @@ export default function WorkshopsPage() {
 
   async function distributeMaterial() {
     if (!selectedParticipantForDistribution || !materialDistribution.productId || !materialDistribution.quantity || !selectedWorkshopId) {
-      setError('Please select participant, product, quantity, and ensure workshop is selected')
+      toast.error('Please select participant, product, quantity, and ensure workshop is selected')
       return
     }
 
     setLoading(true)
-    setError('')
     try {
       const res = await fetch('/api/distribute-materials', {
         method: 'POST',
@@ -226,16 +225,20 @@ export default function WorkshopsPage() {
 
       const result = await res.json()
       if (!res.ok) {
-        setError(result.error || 'Failed to distribute materials')
+        toast.error(result.error || 'Failed to distribute materials')
         return
       }
+
+      const participantName = participants.find(p => p._id === selectedParticipantForDistribution)?.name
+      const productName = userBalances.find(b => b.productId === materialDistribution.productId)?.productName
+      toast.success(`Successfully distributed ${materialDistribution.quantity} ${productName} to ${participantName}`)
 
       setMaterialDistribution({ productId: '', quantity: 0 })
       setSelectedParticipantForDistribution(null)
       fetchUserBalances()
       fetchParticipants()
     } catch (err) {
-      setError('Failed to distribute materials')
+      toast.error('Failed to distribute materials')
     } finally {
       setLoading(false)
     }
@@ -243,17 +246,16 @@ export default function WorkshopsPage() {
 
   async function bulkDistributeMaterials() {
     if (!bulkDistribution.productId || !bulkDistribution.quantityPerParticipant || !selectedWorkshopId) {
-      setError('Please select product, quantity per participant, and ensure workshop is selected')
+      toast.error('Please select product, quantity per participant, and ensure workshop is selected')
       return
     }
 
     if (participants.length === 0) {
-      setError('No participants found for this workshop')
+      toast.error('No participants found for this workshop')
       return
     }
 
     setLoading(true)
-    setError('')
     try {
       const res = await fetch('/api/distribute-materials/bulk', {
         method: 'POST',
@@ -267,19 +269,18 @@ export default function WorkshopsPage() {
 
       const result = await res.json()
       if (!res.ok) {
-        setError(result.error || 'Failed to bulk distribute materials')
+        toast.error(result.error || 'Failed to bulk distribute materials')
         return
       }
 
-      // Show success message
-      setSuccess(`Successfully distributed ${result.distributed.totalQuantity} ${result.distributed.productName} to ${result.distributed.participantCount} participants (${result.distributed.quantityPerParticipant} each)`)
-      setError('')
+      // Show success toast
+      toast.success(`Successfully distributed ${result.distributed.totalQuantity} ${result.distributed.productName} to ${result.distributed.participantCount} participants (${result.distributed.quantityPerParticipant} each)`)
 
       setBulkDistribution({ productId: '', quantityPerParticipant: 0 })
       fetchUserBalances()
       fetchParticipants()
     } catch (err) {
-      setError('Failed to bulk distribute materials')
+      toast.error('Failed to bulk distribute materials')
     } finally {
       setLoading(false)
     }
@@ -287,7 +288,6 @@ export default function WorkshopsPage() {
 
   async function updateWorkshop(id: string, workshop: Workshop) {
     setLoading(true)
-    setError('')
     try {
       const res = await fetch(`/api/workshops/${id}`, {
         method: 'PUT',
@@ -297,14 +297,16 @@ export default function WorkshopsPage() {
 
       const result = await res.json()
       if (!res.ok) {
-        setError(result.error || 'Failed to update workshop')
+        toast.error(result.error || 'Failed to update workshop')
         return
       }
+
+      toast.success('Workshop updated successfully!')
 
       setEditingId(null)
       fetchWorkshops()
     } catch (err) {
-      setError('Failed to update workshop')
+      toast.error('Failed to update workshop')
     } finally {
       setLoading(false)
     }
@@ -314,19 +316,20 @@ export default function WorkshopsPage() {
     // Will be handled by Dialog component
 
     setLoading(true)
-    setError('')
     try {
       const res = await fetch(`/api/workshops/${id}`, { method: 'DELETE' })
 
       const result = await res.json()
       if (!res.ok) {
-        setError(result.error || 'Failed to delete workshop')
+        toast.error(result.error || 'Failed to delete workshop')
         return
       }
 
+      toast.success('Workshop deleted successfully!')
+
       fetchWorkshops()
     } catch (err) {
-      setError('Failed to delete workshop')
+      toast.error('Failed to delete workshop')
     } finally {
       setLoading(false)
     }
@@ -378,39 +381,7 @@ export default function WorkshopsPage() {
           <TabsTrigger value="materials">📦 Material Distribution</TabsTrigger>
         </TabsList>
 
-        {/* Error Message */}
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription className="flex justify-between items-center">
-              {error}
-              <Button
-                onClick={() => setError('')}
-                variant="ghost"
-                size="sm"
-                className="h-auto p-0 text-destructive hover:text-destructive"
-              >
-                ×
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
 
-        {/* Success Message */}
-        {success && (
-          <Alert variant="default" className="mb-6 border-green-200 bg-green-50">
-            <AlertDescription className="flex justify-between items-center text-green-800">
-              ✅ {success}
-              <Button
-                onClick={() => setSuccess('')}
-                variant="ghost"
-                size="sm"
-                className="h-auto p-0 text-green-600 hover:text-green-800"
-              >
-                ×
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
 
         <TabsContent value="workshops" className="space-y-6">
           {/* Add Workshop Form */}
@@ -666,25 +637,37 @@ export default function WorkshopsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input
-                      placeholder="Full Name"
-                      value={newParticipant.name}
-                      onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
-                      disabled={loading}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Age"
-                      value={newParticipant.age}
-                      onChange={(e) => setNewParticipant({ ...newParticipant, age: parseInt(e.target.value) || 0 })}
-                      disabled={loading}
-                    />
-                    <Input
-                      placeholder="Phone Number"
-                      value={newParticipant.phoneNumber}
-                      onChange={(e) => setNewParticipant({ ...newParticipant, phoneNumber: e.target.value })}
-                      disabled={loading}
-                    />
+                    <div>
+                      <Label htmlFor="participant-name">Full Name *</Label>
+                      <Input
+                        id="participant-name"
+                        placeholder="Enter participant's full name"
+                        value={newParticipant.name}
+                        onChange={(e) => setNewParticipant({ ...newParticipant, name: e.target.value })}
+                        disabled={loading}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="participant-age">Age *</Label>
+                      <Input
+                        id="participant-age"
+                        type="number"
+                        placeholder="Enter age"
+                        value={newParticipant.age}
+                        onChange={(e) => setNewParticipant({ ...newParticipant, age: parseInt(e.target.value) || 0 })}
+                        disabled={loading}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="participant-phone">Phone Number *</Label>
+                      <Input
+                        id="participant-phone"
+                        placeholder="Enter phone number"
+                        value={newParticipant.phoneNumber}
+                        onChange={(e) => setNewParticipant({ ...newParticipant, phoneNumber: e.target.value })}
+                        disabled={loading}
+                      />
+                    </div>
                   </div>
                   <div className="mt-4">
                     <Button
@@ -856,27 +839,35 @@ export default function WorkshopsPage() {
                 <div style={{ marginBottom: '20px', border: '1px solid #007cba', padding: '15px', borderRadius: '8px', backgroundColor: '#f0f8ff' }}>
                   <h3>🚀 Bulk Distribute to ALL Participants ({participants.length} people)</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', alignItems: 'end' }}>
-                    <select
-                      value={bulkDistribution.productId}
-                      onChange={(e) => setBulkDistribution({ ...bulkDistribution, productId: e.target.value })}
-                      style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      disabled={loading}
-                    >
-                      <option value="">Select Material</option>
-                      {userBalances.filter(b => b.availableQuantity > 0).map((balance) => (
-                        <option key={balance.productId} value={balance.productId}>
-                          {balance.productName} (Available: {balance.availableQuantity})
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      placeholder="Quantity per participant"
-                      value={bulkDistribution.quantityPerParticipant}
-                      onChange={(e) => setBulkDistribution({ ...bulkDistribution, quantityPerParticipant: parseInt(e.target.value) || 0 })}
-                      style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      disabled={loading}
-                    />
+                    <div>
+                      <Label htmlFor="bulk-material-select">Material</Label>
+                      <select
+                        id="bulk-material-select"
+                        value={bulkDistribution.productId}
+                        onChange={(e) => setBulkDistribution({ ...bulkDistribution, productId: e.target.value })}
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                        disabled={loading}
+                      >
+                        <option value="">Select Material</option>
+                        {userBalances.filter(b => b.availableQuantity > 0).map((balance) => (
+                          <option key={balance.productId} value={balance.productId}>
+                            {balance.productName} (Available: {balance.availableQuantity})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="bulk-quantity-input">Quantity per Participant</Label>
+                      <input
+                        id="bulk-quantity-input"
+                        type="number"
+                        placeholder="Enter quantity"
+                        value={bulkDistribution.quantityPerParticipant}
+                        onChange={(e) => setBulkDistribution({ ...bulkDistribution, quantityPerParticipant: parseInt(e.target.value) || 0 })}
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                        disabled={loading}
+                      />
+                    </div>
                     <button
                       onClick={bulkDistributeMaterials}
                       disabled={loading || !bulkDistribution.productId || !bulkDistribution.quantityPerParticipant}
@@ -911,41 +902,53 @@ export default function WorkshopsPage() {
                 <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
                   <h3>🎯 Distribute Materials to Individual Participant</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', alignItems: 'end' }}>
-                    <select
-                      value={selectedParticipantForDistribution || ''}
-                      onChange={(e) => setSelectedParticipantForDistribution(e.target.value || null)}
-                      style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      disabled={loading}
-                    >
-                      <option value="">Select Participant</option>
-                      {participants.map((participant) => (
-                        <option key={participant._id} value={participant._id}>
-                          {participant.name} (Age: {participant.age})
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={materialDistribution.productId}
-                      onChange={(e) => setMaterialDistribution({ ...materialDistribution, productId: e.target.value })}
-                      style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      disabled={loading}
-                    >
-                      <option value="">Select Material</option>
-                      {userBalances.filter(b => b.availableQuantity > 0).map((balance) => (
-                        <option key={balance.productId} value={balance.productId}>
-                          {balance.productName} (Available: {balance.availableQuantity})
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      placeholder="Quantity"
-                      value={materialDistribution.quantity}
-                      max={userBalances.find(b => b.productId === materialDistribution.productId)?.availableQuantity || 0}
-                      onChange={(e) => setMaterialDistribution({ ...materialDistribution, quantity: parseInt(e.target.value) || 0 })}
-                      style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                      disabled={loading}
-                    />
+                    <div>
+                      <Label htmlFor="participant-select">Participant</Label>
+                      <select
+                        id="participant-select"
+                        value={selectedParticipantForDistribution || ''}
+                        onChange={(e) => setSelectedParticipantForDistribution(e.target.value || null)}
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                        disabled={loading}
+                      >
+                        <option value="">Select Participant</option>
+                        {participants.map((participant) => (
+                          <option key={participant._id} value={participant._id}>
+                            {participant.name} (Age: {participant.age})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="individual-material-select">Material</Label>
+                      <select
+                        id="individual-material-select"
+                        value={materialDistribution.productId}
+                        onChange={(e) => setMaterialDistribution({ ...materialDistribution, productId: e.target.value })}
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                        disabled={loading}
+                      >
+                        <option value="">Select Material</option>
+                        {userBalances.filter(b => b.availableQuantity > 0).map((balance) => (
+                          <option key={balance.productId} value={balance.productId}>
+                            {balance.productName} (Available: {balance.availableQuantity})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="individual-quantity-input">Quantity</Label>
+                      <input
+                        id="individual-quantity-input"
+                        type="number"
+                        placeholder="Enter quantity"
+                        value={materialDistribution.quantity}
+                        max={userBalances.find(b => b.productId === materialDistribution.productId)?.availableQuantity || 0}
+                        onChange={(e) => setMaterialDistribution({ ...materialDistribution, quantity: parseInt(e.target.value) || 0 })}
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                        disabled={loading}
+                      />
+                    </div>
                     <button
                       onClick={distributeMaterial}
                       disabled={loading || !selectedParticipantForDistribution || !materialDistribution.productId || !materialDistribution.quantity}
