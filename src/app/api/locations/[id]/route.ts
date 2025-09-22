@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb'
 import { LocationSchema, validateData } from '@/lib/validations'
 import { createAuthHandler, AuthSession } from '@/lib/auth-middleware'
 
-async function handleGetLocation(request: NextRequest, session: AuthSession, { params }: { params: { id: string } }) {
+async function handleGetLocation(request: NextRequest, session: AuthSession, params: { id: string }) {
   try {
     const db = await connectDB()
 
@@ -28,7 +28,7 @@ async function handleGetLocation(request: NextRequest, session: AuthSession, { p
   }
 }
 
-async function handleUpdateLocation(request: NextRequest, session: AuthSession, { params }: { params: { id: string } }) {
+async function handleUpdateLocation(request: NextRequest, session: AuthSession, params: { id: string }) {
   try {
     const db = await connectDB()
 
@@ -100,7 +100,7 @@ async function handleUpdateLocation(request: NextRequest, session: AuthSession, 
   }
 }
 
-async function handleDeleteLocation(request: NextRequest, session: AuthSession, { params }: { params: { id: string } }) {
+async function handleDeleteLocation(request: NextRequest, session: AuthSession, params: { id: string }) {
   try {
     const db = await connectDB()
 

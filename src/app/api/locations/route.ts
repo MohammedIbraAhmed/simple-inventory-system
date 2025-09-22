@@ -90,6 +90,6 @@ async function handleCreateLocation(request: NextRequest, session: AuthSession) 
   }
 }
 
-// Only admins can manage locations
+// Any authenticated user can read and create locations, only admins can update/delete
 export const GET = createAuthHandler(handleGetLocations, 'any')
-export const POST = createAuthHandler(handleCreateLocation, 'admin')
+export const POST = createAuthHandler(handleCreateLocation, 'any')
