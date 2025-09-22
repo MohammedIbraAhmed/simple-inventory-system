@@ -121,21 +121,21 @@ function NavigationMenuViewport({
   )
 }
 
-function NavigationMenuLink({
-  className,
-  ...props
-}: React.ComponentProps<typeof NavigationMenuPrimitive.Link>) {
-  return (
-    <NavigationMenuPrimitive.Link
-      data-slot="navigation-menu-link"
-      className={cn(
-        "text-black hover:bg-gray-100 focus:bg-gray-100 flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      {...props}
-    />
-  )
-}
+const NavigationMenuLink = React.forwardRef<
+  React.ElementRef<typeof NavigationMenuPrimitive.Link>,
+  React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Link>
+>(({ className, ...props }, ref) => (
+  <NavigationMenuPrimitive.Link
+    ref={ref}
+    data-slot="navigation-menu-link"
+    className={cn(
+      "text-black hover:bg-gray-100 focus:bg-gray-100 flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none [&_svg:not([class*='size-'])]:size-4",
+      className
+    )}
+    {...props}
+  />
+))
+NavigationMenuLink.displayName = NavigationMenuPrimitive.Link.displayName
 
 function NavigationMenuIndicator({
   className,
