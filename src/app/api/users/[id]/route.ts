@@ -43,7 +43,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true })
+    if (result.modifiedCount === 0) {
+      return NextResponse.json({ message: 'No changes made to user' }, { status: 200 })
+    }
+
+    return NextResponse.json({ success: true, message: 'User updated successfully' })
   } catch (error) {
     console.error('Update user error:', error)
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 })
