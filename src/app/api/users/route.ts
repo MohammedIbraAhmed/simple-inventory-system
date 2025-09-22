@@ -92,8 +92,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
     }
 
-    // Check if email already exists
-    const existingUser = await db.collection('users').findOne({ email: userData.email })
+    // Check if email already exists (case-insensitive)
+    const existingUser = await db.collection('users').findOne({
+      email: { $regex: new RegExp(`^${userData.email.trim()}$`, 'i') }
+    })
     if (existingUser) {
       return NextResponse.json({ error: 'Email already exists' }, { status: 400 })
     }
@@ -107,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     const newUser = {
       name: userData.name,
-      email: userData.email,
+      email: userData.email.toLowerCase().trim(),
       password: hashedPassword,
       role: userData.role || 'user',
       isActive: true,

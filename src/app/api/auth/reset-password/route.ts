@@ -18,7 +18,11 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await connectDB()
-    const user = await db.collection('users').findOne({ email, isActive: true })
+    // Case-insensitive email lookup
+    const user = await db.collection('users').findOne({
+      email: { $regex: new RegExp(`^${email.trim()}$`, 'i') },
+      isActive: true
+    })
 
     if (!user) {
       console.log('❌ User not found or inactive for email:', email)

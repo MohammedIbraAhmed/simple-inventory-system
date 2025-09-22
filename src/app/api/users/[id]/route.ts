@@ -17,10 +17,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Remove _id from update data
     const { _id, ...updateData } = userData
 
-    // If email is being updated, check for uniqueness
+    // If email is being updated, check for uniqueness and normalize
     if (updateData.email) {
+      updateData.email = updateData.email.toLowerCase().trim()
+
       const existingUser = await db.collection('users').findOne({
-        email: updateData.email,
+        email: { $regex: new RegExp(`^${updateData.email}$`, 'i') },
         _id: { $ne: new ObjectId(params.id) } // Exclude current user
       })
 
