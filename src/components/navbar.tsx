@@ -32,7 +32,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { Menu, Home, Users, MapPin, BarChart3, Settings, Lock, LogOut, User, ChevronDown, Package, Package2 } from 'lucide-react'
+import { Menu, Home, Users, MapPin, BarChart3, Settings, Lock, LogOut, User, ChevronDown, Package, Package2, BookOpen } from 'lucide-react'
 import { useState } from 'react'
 
 // Helper function to get user initials
@@ -112,6 +112,15 @@ export function Navbar() {
                   <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "flex items-center flex-row", pathname === '/workshops' && 'bg-accent text-accent-foreground')}>
                     <Users className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span>Workshops</span>
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <Link href="/programs" legacyBehavior passHref>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "flex items-center flex-row", pathname === '/programs' && 'bg-accent text-accent-foreground')}>
+                    <BookOpen className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span>Programs</span>
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
@@ -334,6 +343,17 @@ export function Navbar() {
                 >
                   <Users className="mr-3 h-4 w-4 flex-shrink-0" />
                   <span>Workshops</span>
+                </Link>
+                <Link
+                  href="/programs"
+                  className={cn(
+                    "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                    pathname === '/programs' && 'bg-accent text-accent-foreground'
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <BookOpen className="mr-3 h-4 w-4 flex-shrink-0" />
+                  <span>Programs</span>
                 </Link>
                 <Link
                   href="/locations"

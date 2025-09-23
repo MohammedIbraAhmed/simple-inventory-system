@@ -5,7 +5,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-A comprehensive inventory management system built specifically for workshop management, material distribution, and participant tracking. Designed for humanitarian organizations, community centers, and educational institutions managing workshops and resource distribution.
+A comprehensive inventory management system built specifically for workshop management, multi-session program tracking, material distribution, and participant management. Designed for humanitarian organizations, community centers, and educational institutions managing both single workshops and complex multi-session programs with unique beneficiary counting.
 
 ## 🌟 Key Features
 
@@ -16,6 +16,17 @@ A comprehensive inventory management system built specifically for workshop mana
 - **Real-time Status Tracking**: Planned, Ongoing, Completed, Cancelled
 - **Location Integration**: Link workshops to specific locations with GPS coordinates
 - **Material Usage Tracking**: Track all materials distributed during workshops
+
+### 📚 **Multi-Session Program Management** *(NEW!)*
+- **Program vs Workshop Distinction**: Single workshops vs multi-session programs
+- **Auto-Generated Program Codes**: Format `[UserInitials]-[YYYYMMDD]-[LocationCode]-PROG-[Counter]`
+  - Example: `AH-20240215-CD-PROG-1` (Ahmed Hassan Digital Literacy Program)
+- **Session Management**: Multiple sessions within programs with auto-generated session codes
+- **Unique Beneficiary Counting**: Participants counted once per program (not per session)
+- **Cross-Session Tracking**: Attendance and materials tracked across all program sessions
+- **Program Completion Logic**: Minimum session requirements and completion criteria
+- **Enrollment System**: Prevent duplicate enrollments within the same program
+- **Program-Level Reporting**: Shows unique attendees vs total enrolled participants
 
 ### 👥 **Participant Management**
 - **Comprehensive Registration**: Name, Age, Gender, ID Number, Phone
@@ -66,8 +77,11 @@ A comprehensive inventory management system built specifically for workshop mana
 
 ### 📈 **Reporting System**
 - **Workshop Reports**: Detailed analytics for each workshop
+- **Program Reports**: Multi-session program analytics with unique beneficiary tracking
 - **Participant Statistics**: Demographics, attendance, special needs analysis
-- **Material Usage Reports**: Distribution patterns and inventory insights
+- **Material Usage Reports**: Distribution patterns and inventory insights across sessions
+- **Unique Beneficiary Metrics**: Proper counting for compliance and donor reporting
+- **Attendance Analytics**: Session-level and program-level attendance tracking
 - **Export Capabilities**: PDF, Excel, CSV formats
 - **Custom Date Ranges**: Flexible reporting periods
 
@@ -201,13 +215,18 @@ src/
 │   ├── api/               # API routes
 │   │   ├── auth/         # Authentication endpoints
 │   │   ├── workshops/    # Workshop management
-│   │   ├── participants/ # Participant management
+│   │   ├── programs/     # Multi-session program management
+│   │   ├── sessions/     # Program session management
+│   │   ├── program-participants/ # Program enrollment
+│   │   ├── session-attendance/   # Session attendance tracking
+│   │   ├── participants/ # Workshop participant management
 │   │   ├── locations/    # Location management
 │   │   ├── products/     # Inventory management
 │   │   ├── notifications/# Notification system
-│   │   └── reports/      # Reporting system
+│   │   └── reports/      # Reporting system (workshops & programs)
 │   ├── dashboard/         # Main dashboard
 │   ├── workshops/         # Workshop pages
+│   ├── programs/          # Program management interface
 │   ├── admin/            # Admin panel
 │   ├── locations/        # Location management
 │   ├── distributions/    # Material distribution
@@ -257,8 +276,13 @@ scripts/                 # Database scripts
 
 ### Database Collections
 - `users` - User accounts and profiles
-- `workshops` - Workshop information and status
+- `workshops` - Workshop information and status (single sessions)
+- `programs` - Multi-session program information
+- `sessions` - Individual sessions within programs
 - `participants` - Workshop participant details
+- `unique_participants` - Global participant registry (cross-program tracking)
+- `program_participants` - Program enrollment records
+- `session_attendance` - Session-level attendance and material tracking
 - `locations` - Geographic locations
 - `products` - Inventory items
 - `user_balances` - Material allocations
@@ -267,8 +291,12 @@ scripts/                 # Database scripts
 
 ### Key Features Configuration
 - Workshop code generation patterns
+- Program code generation patterns
+- Session code auto-generation
 - Notification preferences
 - Material distribution rules
+- Program completion criteria
+- Unique beneficiary tracking rules
 - Location management settings
 - User role permissions
 
@@ -331,6 +359,33 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support, email support@example.com or create an issue in the GitHub repository.
+
+## 🆕 Recent Updates
+
+### Version 2.0 - Multi-Session Program Management
+- ✅ **Program Management System**: Complete multi-session program support
+- ✅ **Unique Beneficiary Counting**: Prevents duplicate counting in reports
+- ✅ **Session Management**: Auto-generated session codes and attendance tracking
+- ✅ **Cross-Session Analytics**: Material distribution and attendance across program sessions
+- ✅ **Enhanced Reporting**: Separate workshop and program reporting with proper metrics
+- ✅ **Compliance Ready**: Meets humanitarian organization reporting requirements
+
+## 🎯 Use Cases
+
+### Single Workshop Management
+Perfect for one-time events like:
+- Community health awareness sessions
+- Skills training workshops
+- Distribution events
+- Educational seminars
+
+### Multi-Session Program Management
+Ideal for ongoing programs like:
+- Digital literacy training (6 sessions)
+- Youth entrepreneurship development (8 sessions)
+- Women's health and wellness series (5 sessions)
+- Vocational training programs
+- Educational course series
 
 ---
 
