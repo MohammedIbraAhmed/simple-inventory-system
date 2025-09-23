@@ -112,7 +112,7 @@ function NavigationMenuViewport({
       <NavigationMenuPrimitive.Viewport
         data-slot="navigation-menu-viewport"
         className={cn(
-          "origin-top-center bg-white text-black data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border shadow-lg md:w-[var(--radix-navigation-menu-viewport-width)]",
+          "origin-top-center bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border shadow md:w-[var(--radix-navigation-menu-viewport-width)]",
           className
         )}
         {...props}
@@ -121,21 +121,21 @@ function NavigationMenuViewport({
   )
 }
 
-const NavigationMenuLink = React.forwardRef<
-  React.ElementRef<typeof NavigationMenuPrimitive.Link>,
-  React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Link>
->(({ className, ...props }, ref) => (
-  <NavigationMenuPrimitive.Link
-    ref={ref}
-    data-slot="navigation-menu-link"
-    className={cn(
-      "text-black hover:bg-gray-100 focus:bg-gray-100 flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none [&_svg:not([class*='size-'])]:size-4",
-      className
-    )}
-    {...props}
-  />
-))
-NavigationMenuLink.displayName = NavigationMenuPrimitive.Link.displayName
+function NavigationMenuLink({
+  className,
+  ...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Link>) {
+  return (
+    <NavigationMenuPrimitive.Link
+      data-slot="navigation-menu-link"
+      className={cn(
+        "data-[active=true]:focus:bg-accent data-[active=true]:hover:bg-accent data-[active=true]:bg-accent/50 data-[active=true]:text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-ring/50 [&_svg:not([class*='text-'])]:text-muted-foreground flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
 
 function NavigationMenuIndicator({
   className,
