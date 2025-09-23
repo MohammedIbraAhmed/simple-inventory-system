@@ -32,8 +32,25 @@ export interface Location {
   isActive: boolean
 }
 
+export interface LocationRequest {
+  _id?: string
+  requestType: 'create' | 'edit' | 'delete'
+  locationData: Omit<Location, '_id' | 'createdAt' | 'updatedAt'>
+  originalLocationId?: string // For edit/delete requests
+  requestedBy: string // User ID who made the request
+  requestedByName: string // User name for display
+  status: 'pending' | 'approved' | 'rejected'
+  adminNotes?: string
+  createdAt: string
+  updatedAt: string
+  reviewedBy?: string // Admin ID who reviewed
+  reviewedByName?: string // Admin name for display
+  reviewedAt?: string
+}
+
 export interface Workshop {
   _id?: string
+  workshopCode?: string // Auto-generated unique code
   title: string
   description: string
   date: string
@@ -109,6 +126,8 @@ export interface Participant {
   workshopId: string
   name: string
   age: number
+  gender: 'male' | 'female' | 'other'
+  idNumber: string // National ID or identification number
   phoneNumber: string
   specialStatus: {
     isDisabled: boolean

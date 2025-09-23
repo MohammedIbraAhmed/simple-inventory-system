@@ -54,8 +54,13 @@ export async function POST(request: NextRequest) {
     const participantData = await request.json()
 
     // Validate required fields
-    if (!participantData.workshopId || !participantData.name || !participantData.age || !participantData.phoneNumber) {
-      return NextResponse.json({ error: 'Workshop ID, name, age, and phone number are required' }, { status: 400 })
+    if (!participantData.workshopId || !participantData.name || !participantData.age || !participantData.gender || !participantData.idNumber || !participantData.phoneNumber) {
+      return NextResponse.json({ error: 'Workshop ID, name, age, gender, ID number, and phone number are required' }, { status: 400 })
+    }
+
+    // Validate gender field
+    if (!['male', 'female', 'other'].includes(participantData.gender)) {
+      return NextResponse.json({ error: 'Gender must be male, female, or other' }, { status: 400 })
     }
 
     // Check if workshop exists and user has permission
@@ -73,6 +78,8 @@ export async function POST(request: NextRequest) {
       workshopId: participantData.workshopId,
       name: participantData.name,
       age: participantData.age,
+      gender: participantData.gender,
+      idNumber: participantData.idNumber,
       phoneNumber: participantData.phoneNumber,
       specialStatus: {
         isDisabled: participantData.specialStatus?.isDisabled || false,

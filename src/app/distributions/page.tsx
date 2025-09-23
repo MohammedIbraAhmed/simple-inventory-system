@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { NumberInput } from '@/components/ui/number-input'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Product, Distribution } from '@/types/product'
@@ -165,12 +166,11 @@ export default function DistributionsPage() {
               </option>
             ))}
           </select>
-          <input
-            type="number"
+          <NumberInput
             placeholder="Quantity"
             value={newDistribution.quantity}
             max={selectedProduct?.stock || 0}
-            onChange={(e) => setNewDistribution({ ...newDistribution, quantity: parseInt(e.target.value) || 0 })}
+            onChange={(value) => setNewDistribution({ ...newDistribution, quantity: value })}
             style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
             disabled={loading}
           />

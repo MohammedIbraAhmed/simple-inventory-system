@@ -1,7 +1,7 @@
 export interface Notification {
   _id?: string
   userId: string
-  type: 'low_stock' | 'workshop_reminder' | 'system_alert' | 'user_action' | 'admin_alert'
+  type: 'low_stock' | 'workshop_reminder' | 'system_alert' | 'user_action' | 'admin_alert' | 'location_request'
   title: string
   message: string
   priority: 'low' | 'medium' | 'high' | 'urgent'
@@ -25,12 +25,14 @@ export interface NotificationPreferences {
     workshopReminders: boolean
     systemAlerts: boolean
     adminAlerts: boolean
+    locationRequests: boolean
   }
   pushNotifications: {
     lowStock: boolean
     workshopReminders: boolean
     systemAlerts: boolean
     adminAlerts: boolean
+    locationRequests: boolean
   }
   lowStockThreshold: number
   workshopReminderDays: number[]

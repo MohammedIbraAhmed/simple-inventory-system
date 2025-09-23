@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Check, X, AlertTriangle, Info, AlertCircle, Clock } from 'lucide-react'
+import { Bell, Check, X, AlertTriangle, Info, AlertCircle, Clock, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { Notification, NotificationPreferences } from '@/types/notifications'
@@ -154,6 +155,7 @@ export function NotificationSystem({ userId, userRole }: NotificationSystemProps
       case 'workshop_reminder': return <Clock className="h-4 w-4 text-blue-500" />
       case 'system_alert': return <Info className="h-4 w-4 text-yellow-500" />
       case 'admin_alert': return <AlertTriangle className="h-4 w-4 text-red-500" />
+      case 'location_request': return <MapPin className="h-4 w-4 text-green-500" />
       default: return <Bell className="h-4 w-4 text-gray-500" />
     }
   }
@@ -174,6 +176,7 @@ export function NotificationSystem({ userId, userRole }: NotificationSystemProps
       case 'high': return notification.priority === 'high' || notification.priority === 'urgent'
       case 'low_stock': return notification.type === 'low_stock'
       case 'workshops': return notification.type === 'workshop_reminder'
+      case 'location_requests': return notification.type === 'location_request'
       default: return true
     }
   })
@@ -207,7 +210,7 @@ export function NotificationSystem({ userId, userRole }: NotificationSystemProps
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className={`grid w-full ${userRole === 'admin' ? 'grid-cols-6' : 'grid-cols-5'}`}>
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="unread">
                 Unread {unreadCount > 0 && `(${unreadCount})`}
@@ -215,6 +218,14 @@ export function NotificationSystem({ userId, userRole }: NotificationSystemProps
               <TabsTrigger value="high">High Priority</TabsTrigger>
               <TabsTrigger value="low_stock">Stock</TabsTrigger>
               <TabsTrigger value="workshops">Workshops</TabsTrigger>
+              {userRole === 'admin' && (
+                <TabsTrigger value="location_requests">
+                  📍 Requests {(() => {
+                    const locationRequests = notifications.filter(n => n.type === 'location_request' && !n.isRead).length;
+                    return locationRequests > 0 ? `(${locationRequests})` : '';
+                  })()}
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-4">
@@ -371,6 +382,17 @@ function NotificationPreferencesSection({
                 disabled={loading}
               />
             </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="email-location-requests" className="text-sm">Location Requests</Label>
+              <Switch
+                id="email-location-requests"
+                checked={localPrefs.emailNotifications.locationRequests}
+                onCheckedChange={(checked) =>
+                  handleUpdate('emailNotifications', 'locationRequests', checked)
+                }
+                disabled={loading}
+              />
+            </div>
           </div>
         </div>
 
@@ -410,6 +432,17 @@ function NotificationPreferencesSection({
                 disabled={loading}
               />
             </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="push-location-requests" className="text-sm">Location Requests</Label>
+              <Switch
+                id="push-location-requests"
+                checked={localPrefs.pushNotifications.locationRequests}
+                onCheckedChange={(checked) =>
+                  handleUpdate('pushNotifications', 'locationRequests', checked)
+                }
+                disabled={loading}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -419,15 +452,14 @@ function NotificationPreferencesSection({
           <Label htmlFor="low-stock-threshold" className="text-sm font-medium">
             Low Stock Threshold
           </Label>
-          <Input
+          <NumberInput
             id="low-stock-threshold"
-            type="number"
-            min="1"
+            min={1}
             value={localPrefs.lowStockThreshold}
-            onChange={(e) =>
+            onChange={(value) =>
               setLocalPrefs(prev => prev ? {
                 ...prev,
-                lowStockThreshold: parseInt(e.target.value) || 5
+                lowStockThreshold: value || 5
               } : null)
             }
             onBlur={() => onUpdate({ lowStockThreshold: localPrefs.lowStockThreshold })}

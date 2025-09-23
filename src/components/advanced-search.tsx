@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, Filter, X, SlidersHorizontal } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -356,25 +357,22 @@ function FilterDialog({ open, onOpenChange, onAddFilter, searchFields }: FilterD
                 ) : selectedFieldConfig.type === 'number' ? (
                   operator === 'between' ? (
                     <div className="flex gap-2 items-center">
-                      <Input
-                        type="number"
+                      <NumberInput
                         value={rangeValue[0]}
-                        onChange={(e) => setRangeValue([Number(e.target.value), rangeValue[1]])}
+                        onChange={(value) => setRangeValue([value, rangeValue[1]])}
                         placeholder="Min"
                       />
                       <span>to</span>
-                      <Input
-                        type="number"
+                      <NumberInput
                         value={rangeValue[1]}
-                        onChange={(e) => setRangeValue([rangeValue[0], Number(e.target.value)])}
+                        onChange={(value) => setRangeValue([rangeValue[0], value])}
                         placeholder="Max"
                       />
                     </div>
                   ) : (
-                    <Input
-                      type="number"
+                    <NumberInput
                       value={numberValue}
-                      onChange={(e) => setNumberValue(Number(e.target.value))}
+                      onChange={(value) => setNumberValue(value)}
                       placeholder="Enter number"
                     />
                   )

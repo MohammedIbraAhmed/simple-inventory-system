@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -399,27 +400,25 @@ export default function Dashboard() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="product-stock">Stock Quantity</Label>
-                  <Input
+                  <NumberInput
                     id="product-stock"
-                    type="number"
                     placeholder="Enter quantity"
                     value={newProduct.stock}
-                    onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) || 0 })}
+                    onChange={(value) => setNewProduct({ ...newProduct, stock: value })}
                     disabled={loading}
-                    min="0"
+                    min={0}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="product-price">Price ($)</Label>
-                  <Input
+                  <NumberInput
                     id="product-price"
-                    type="number"
                     step="0.01"
                     placeholder="Enter price"
                     value={newProduct.price}
-                    onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 })}
+                    onChange={(value) => setNewProduct({ ...newProduct, price: value })}
                     disabled={loading}
-                    min="0"
+                    min={0}
                   />
                 </div>
                 <div className="space-y-2">
@@ -492,11 +491,10 @@ export default function Dashboard() {
                   </TableCell>
                   <TableCell>
                     {editingId === product._id ? (
-                      <Input
-                        type="number"
+                      <NumberInput
                         value={product.stock}
-                        onChange={(e) => setProducts(products.map(p =>
-                          p._id === product._id ? { ...p, stock: parseInt(e.target.value) || 0 } : p
+                        onChange={(value) => setProducts(products.map(p =>
+                          p._id === product._id ? { ...p, stock: value } : p
                         ))}
                         className="h-8"
                       />
@@ -509,12 +507,11 @@ export default function Dashboard() {
                   </TableCell>
                   <TableCell>
                     {editingId === product._id ? (
-                      <Input
-                        type="number"
+                      <NumberInput
                         step="0.01"
                         value={product.price}
-                        onChange={(e) => setProducts(products.map(p =>
-                          p._id === product._id ? { ...p, price: parseFloat(e.target.value) || 0 } : p
+                        onChange={(value) => setProducts(products.map(p =>
+                          p._id === product._id ? { ...p, price: value } : p
                         ))}
                         className="h-8"
                       />

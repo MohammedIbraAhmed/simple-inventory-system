@@ -298,11 +298,11 @@ async function seedDatabase() {
 
     // Participants for Children's Art Workshop
     const artWorkshopParticipants = [
-      { name: 'Sara Ahmed', age: 8, phone: '+1-555-1001' },
-      { name: 'Omar Hassan', age: 9, phone: '+1-555-1002' },
-      { name: 'Layla Mohamed', age: 7, phone: '+1-555-1003' },
-      { name: 'Yusuf Ali', age: 10, phone: '+1-555-1004' },
-      { name: 'Amina Salem', age: 6, phone: '+1-555-1005' }
+      { name: 'Sara Ahmed', age: 8, gender: 'female', idNumber: 'ID001234567', phone: '+1-555-1001' },
+      { name: 'Omar Hassan', age: 9, gender: 'male', idNumber: 'ID001234568', phone: '+1-555-1002' },
+      { name: 'Layla Mohamed', age: 7, gender: 'female', idNumber: 'ID001234569', phone: '+1-555-1003' },
+      { name: 'Yusuf Ali', age: 10, gender: 'male', idNumber: 'ID001234570', phone: '+1-555-1004' },
+      { name: 'Amina Salem', age: 6, gender: 'female', idNumber: 'ID001234571', phone: '+1-555-1005' }
     ]
 
     artWorkshopParticipants.forEach(participant => {
@@ -310,6 +310,8 @@ async function seedDatabase() {
         workshopId: workshopIds[0],
         name: participant.name,
         age: participant.age,
+        gender: participant.gender,
+        idNumber: participant.idNumber,
         phoneNumber: participant.phone,
         specialStatus: {
           isDisabled: false,
@@ -325,10 +327,10 @@ async function seedDatabase() {
 
     // Participants for Youth Leadership Training
     const leadershipParticipants = [
-      { name: 'Khalid Ibrahim', age: 16, phone: '+1-555-2001' },
-      { name: 'Nour Mahmoud', age: 17, phone: '+1-555-2002' },
-      { name: 'Hassan Omar', age: 15, phone: '+1-555-2003' },
-      { name: 'Mariam Yusuf', age: 16, phone: '+1-555-2004' }
+      { name: 'Khalid Ibrahim', age: 16, gender: 'male', idNumber: 'ID002234567', phone: '+1-555-2001' },
+      { name: 'Nour Mahmoud', age: 17, gender: 'female', idNumber: 'ID002234568', phone: '+1-555-2002' },
+      { name: 'Hassan Omar', age: 15, gender: 'male', idNumber: 'ID002234569', phone: '+1-555-2003' },
+      { name: 'Mariam Yusuf', age: 16, gender: 'female', idNumber: 'ID002234570', phone: '+1-555-2004' }
     ]
 
     leadershipParticipants.forEach(participant => {
@@ -336,6 +338,8 @@ async function seedDatabase() {
         workshopId: workshopIds[1],
         name: participant.name,
         age: participant.age,
+        gender: participant.gender,
+        idNumber: participant.idNumber,
         phoneNumber: participant.phone,
         specialStatus: {
           isDisabled: false,

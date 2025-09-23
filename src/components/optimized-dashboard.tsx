@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -133,10 +134,9 @@ const ProductTableRow = memo(({
       </TableCell>
       <TableCell>
         {editingId === product._id ? (
-          <Input
-            type="number"
+          <NumberInput
             value={product.stock}
-            onChange={(e) => updateProductField('stock', parseInt(e.target.value) || 0)}
+            onChange={(value) => updateProductField('stock', value)}
             className="h-8"
           />
         ) : (
@@ -148,11 +148,10 @@ const ProductTableRow = memo(({
       </TableCell>
       <TableCell>
         {editingId === product._id ? (
-          <Input
-            type="number"
+          <NumberInput
             step="0.01"
             value={product.price}
-            onChange={(e) => updateProductField('price', parseFloat(e.target.value) || 0)}
+            onChange={(value) => updateProductField('price', value)}
             className="h-8"
           />
         ) : `$${product.price.toFixed(2)}`}
@@ -566,19 +565,17 @@ export default function OptimizedDashboard() {
                   <option value="materials">📦 Materials</option>
                   <option value="refreshments">🍪 Refreshments</option>
                 </select>
-                <Input
-                  type="number"
+                <NumberInput
                   placeholder="Stock"
                   value={newProduct.stock}
-                  onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) || 0 })}
+                  onChange={(value) => setNewProduct({ ...newProduct, stock: value })}
                   disabled={loading}
                 />
-                <Input
-                  type="number"
+                <NumberInput
                   step="0.01"
                   placeholder="Price"
                   value={newProduct.price}
-                  onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 })}
+                  onChange={(value) => setNewProduct({ ...newProduct, price: value })}
                   disabled={loading}
                 />
                 <Button

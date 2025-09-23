@@ -12,9 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { MapPin, Plus, Edit, Trash2, Users, Baby, Phone, Navigation, Clock, Send } from 'lucide-react'
+import { MapPin, Plus, Edit, Trash2, Users, Baby, Phone, Navigation } from 'lucide-react'
 import { getNeighborhoods } from '@/lib/neighborhoods'
 
 export default function LocationsPage() {
@@ -26,12 +25,6 @@ export default function LocationsPage() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [editingLocation, setEditingLocation] = useState<Location | null>(null)
-
-  // Request dialog states
-  const [showRequestDialog, setShowRequestDialog] = useState(false)
-  const [requestType, setRequestType] = useState<'create' | 'edit' | 'delete'>('create')
-  const [requestingLocation, setRequestingLocation] = useState<Location | null>(null)
-  const [requestNotes, setRequestNotes] = useState('')
 
   const [newLocation, setNewLocation] = useState({
     name: '',
@@ -58,7 +51,10 @@ export default function LocationsPage() {
       router.push('/auth/signin')
       return
     }
-    // Allow all authenticated users to view locations
+    if (session.user.role !== 'admin') {
+      router.push('/dashboard')
+      return
+    }
     fetchLocations()
   }, [session, status, router])
 
@@ -202,88 +198,6 @@ export default function LocationsPage() {
     })
   }
 
-  const submitLocationRequest = async () => {
-    if (!session?.user?.name || !session?.user?.email) {
-      toast.error('User session not found')
-      return
-    }
-
-    let locationData
-    if (requestType === 'create') {
-      if (!newLocation.name || !newLocation.type || !newLocation.governorate || !newLocation.neighborhood || !newLocation.siteManager.name || !newLocation.siteManager.phoneNumber) {
-        toast.error('Please fill in all required fields')
-        return
-      }
-      locationData = newLocation
-    } else if (requestType === 'edit' && requestingLocation) {
-      locationData = {
-        name: requestingLocation.name,
-        type: requestingLocation.type,
-        governorate: requestingLocation.governorate,
-        neighborhood: requestingLocation.neighborhood,
-        gpsCoordinates: requestingLocation.gpsCoordinates,
-        siteManager: requestingLocation.siteManager,
-        demographics: requestingLocation.demographics
-      }
-    } else if (requestType === 'delete' && requestingLocation) {
-      locationData = {
-        name: requestingLocation.name,
-        type: requestingLocation.type,
-        governorate: requestingLocation.governorate,
-        neighborhood: requestingLocation.neighborhood,
-        gpsCoordinates: requestingLocation.gpsCoordinates,
-        siteManager: requestingLocation.siteManager,
-        demographics: requestingLocation.demographics
-      }
-    } else {
-      toast.error('Invalid request data')
-      return
-    }
-
-    setLoading(true)
-    try {
-      const requestData = {
-        requestType,
-        locationData,
-        originalLocationId: requestType !== 'create' ? requestingLocation?._id : undefined,
-        requestedBy: session.user.email,
-        requestedByName: session.user.name,
-        status: 'pending',
-        adminNotes: requestNotes
-      }
-
-      const response = await fetch('/api/location-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData)
-      })
-
-      const result = await response.json()
-      if (response.ok) {
-        toast.success(`${requestType.charAt(0).toUpperCase() + requestType.slice(1)} request submitted successfully! Admin will review it soon.`)
-        setShowRequestDialog(false)
-        setRequestNotes('')
-        setRequestingLocation(null)
-        if (requestType === 'create') {
-          resetForm()
-        }
-      } else {
-        toast.error(result.error || 'Failed to submit request')
-      }
-    } catch (error) {
-      toast.error('Failed to submit request')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const openRequestDialog = (type: 'create' | 'edit' | 'delete', location?: Location) => {
-    setRequestType(type)
-    setRequestingLocation(location || null)
-    setRequestNotes('')
-    setShowRequestDialog(true)
-  }
-
   const filteredLocations = locations.filter(location =>
     location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     location.governorate.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -293,21 +207,14 @@ export default function LocationsPage() {
   )
 
   if (status === 'loading') return <div>Loading...</div>
-  if (!session) return null
-
-  const isAdmin = session.user.role === 'admin'
+  if (!session || session.user.role !== 'admin') return null
 
   return (
     <div className="max-w-7xl mx-auto py-6">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          📍 {isAdmin ? 'Location Management' : 'Locations'}
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">📍 Location Management</h1>
         <p className="text-muted-foreground">
-          {isAdmin
-            ? 'Manage locations across Gaza Strip for workshop planning'
-            : 'View locations across Gaza Strip for workshop planning'
-          }
+          Manage locations across Gaza Strip for workshop planning
         </p>
       </div>
 
@@ -342,14 +249,13 @@ export default function LocationsPage() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Gaza Strip Locations</CardTitle>
-            {isAdmin ? (
-              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Location
-                  </Button>
-                </DialogTrigger>
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Location
+                </Button>
+              </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Add New Location</DialogTitle>
@@ -504,12 +410,6 @@ export default function LocationsPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            ) : (
-              <Button onClick={() => openRequestDialog('create')}>
-                <Clock className="h-4 w-4 mr-2" />
-                Request New Location
-              </Button>
-            )}
           </div>
           <Input
             placeholder="Search locations by name, governorate, neighborhood, type, or manager..."
@@ -575,47 +475,23 @@ export default function LocationsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      {isAdmin ? (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingLocation(location)
-                              setShowEditDialog(true)
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteLocation(location._id!, location.name)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setRequestingLocation(location)
-                              openRequestDialog('edit', location)
-                            }}
-                          >
-                            <Clock className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openRequestDialog('delete', location)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingLocation(location)
+                          setShowEditDialog(true)
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteLocation(location._id!, location.name)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -632,7 +508,7 @@ export default function LocationsPage() {
       </Card>
 
       {/* Edit Dialog */}
-      {isAdmin && editingLocation && (
+      {editingLocation && (
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -797,353 +673,6 @@ export default function LocationsPage() {
               </Button>
               <Button onClick={updateLocation} disabled={loading}>
                 {loading ? 'Updating...' : 'Update Location'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Request Dialog for Regular Users */}
-      {!isAdmin && (
-        <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {requestType === 'create' && 'Request New Location'}
-                {requestType === 'edit' && 'Request Location Edit'}
-                {requestType === 'delete' && 'Request Location Deletion'}
-              </DialogTitle>
-              <DialogDescription>
-                {requestType === 'create' && 'Submit a request to create a new location. Admin approval required.'}
-                {requestType === 'edit' && `Submit a request to edit "${requestingLocation?.name}". Admin approval required.`}
-                {requestType === 'delete' && `Submit a request to delete "${requestingLocation?.name}". Admin approval required.`}
-              </DialogDescription>
-            </DialogHeader>
-
-            {requestType === 'create' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="request-location-name">Location Name *</Label>
-                  <Input
-                    id="request-location-name"
-                    value={newLocation.name}
-                    onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
-                    placeholder="e.g., Community Center Al-Shifa"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="request-location-type">Location Type *</Label>
-                  <Select value={newLocation.type} onValueChange={(value) => setNewLocation({ ...newLocation, type: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Collective_Centres_Non_UNRWA_Shelters">Collective Centres Non-UNRWA Shelters</SelectItem>
-                      <SelectItem value="Collective_Centres_UNRWA_Shelters">Collective Centres UNRWA Shelters</SelectItem>
-                      <SelectItem value="Makeshift_Shelters">Makeshift Shelters</SelectItem>
-                      <SelectItem value="Scattered_Site">Scattered Site</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="request-governorate">Governorate *</Label>
-                  <Select value={newLocation.governorate} onValueChange={(value) => setNewLocation({ ...newLocation, governorate: value, neighborhood: '' })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select governorate" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="North Gaza">North Gaza</SelectItem>
-                      <SelectItem value="Gaza">Gaza</SelectItem>
-                      <SelectItem value="Deir al Balah">Deir al Balah</SelectItem>
-                      <SelectItem value="Khan Yunis">Khan Yunis</SelectItem>
-                      <SelectItem value="Rafah">Rafah</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="request-neighborhood">Neighborhood *</Label>
-                  <Select
-                    value={newLocation.neighborhood}
-                    onValueChange={(value) => setNewLocation({ ...newLocation, neighborhood: value })}
-                    disabled={!newLocation.governorate}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={newLocation.governorate ? "Select neighborhood" : "Select governorate first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getNeighborhoods(newLocation.governorate).map((neighborhood) => (
-                        <SelectItem key={neighborhood} value={neighborhood}>
-                          {neighborhood}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="request-manager-name">Site Manager Name *</Label>
-                  <Input
-                    id="request-manager-name"
-                    value={newLocation.siteManager.name}
-                    onChange={(e) => setNewLocation({
-                      ...newLocation,
-                      siteManager: { ...newLocation.siteManager, name: e.target.value }
-                    })}
-                    placeholder="Full name of site manager"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="request-manager-phone">Manager Phone *</Label>
-                  <Input
-                    id="request-manager-phone"
-                    value={newLocation.siteManager.phoneNumber}
-                    onChange={(e) => setNewLocation({
-                      ...newLocation,
-                      siteManager: { ...newLocation.siteManager, phoneNumber: e.target.value }
-                    })}
-                    placeholder="e.g., +970 59 123 4567"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="request-num-people">Number of People</Label>
-                  <Input
-                    id="request-num-people"
-                    type="number"
-                    value={newLocation.demographics.numberOfPeople}
-                    onChange={(e) => setNewLocation({
-                      ...newLocation,
-                      demographics: { ...newLocation.demographics, numberOfPeople: parseInt(e.target.value) || 0 }
-                    })}
-                    placeholder="Total people at site"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="request-num-children">Number of Children</Label>
-                  <Input
-                    id="request-num-children"
-                    type="number"
-                    value={newLocation.demographics.numberOfChildren}
-                    onChange={(e) => setNewLocation({
-                      ...newLocation,
-                      demographics: { ...newLocation.demographics, numberOfChildren: parseInt(e.target.value) || 0 }
-                    })}
-                    placeholder="Children at site"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>GPS Coordinates</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Input
-                      type="number"
-                      step="any"
-                      value={newLocation.gpsCoordinates.latitude}
-                      onChange={(e) => setNewLocation({
-                        ...newLocation,
-                        gpsCoordinates: { ...newLocation.gpsCoordinates, latitude: parseFloat(e.target.value) || 0 }
-                      })}
-                      placeholder="Latitude"
-                    />
-                    <Input
-                      type="number"
-                      step="any"
-                      value={newLocation.gpsCoordinates.longitude}
-                      onChange={(e) => setNewLocation({
-                        ...newLocation,
-                        gpsCoordinates: { ...newLocation.gpsCoordinates, longitude: parseFloat(e.target.value) || 0 }
-                      })}
-                      placeholder="Longitude"
-                    />
-                    <Button type="button" variant="outline" onClick={getCurrentLocation}>
-                      <Navigation className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {requestType === 'edit' && requestingLocation && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-request-location-name">Location Name *</Label>
-                  <Input
-                    id="edit-request-location-name"
-                    value={requestingLocation.name}
-                    onChange={(e) => setRequestingLocation({ ...requestingLocation, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-request-location-type">Location Type *</Label>
-                  <Select value={requestingLocation.type} onValueChange={(value) => setRequestingLocation({ ...requestingLocation, type: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Collective_Centres_Non_UNRWA_Shelters">Collective Centres Non-UNRWA Shelters</SelectItem>
-                      <SelectItem value="Collective_Centres_UNRWA_Shelters">Collective Centres UNRWA Shelters</SelectItem>
-                      <SelectItem value="Makeshift_Shelters">Makeshift Shelters</SelectItem>
-                      <SelectItem value="Scattered_Site">Scattered Site</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="edit-request-governorate">Governorate *</Label>
-                  <Select value={requestingLocation.governorate} onValueChange={(value) => setRequestingLocation({ ...requestingLocation, governorate: value, neighborhood: '' })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select governorate" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="North Gaza">North Gaza</SelectItem>
-                      <SelectItem value="Gaza">Gaza</SelectItem>
-                      <SelectItem value="Deir al Balah">Deir al Balah</SelectItem>
-                      <SelectItem value="Khan Yunis">Khan Yunis</SelectItem>
-                      <SelectItem value="Rafah">Rafah</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="edit-request-neighborhood">Neighborhood *</Label>
-                  <Select
-                    value={requestingLocation.neighborhood}
-                    onValueChange={(value) => setRequestingLocation({ ...requestingLocation, neighborhood: value })}
-                    disabled={!requestingLocation.governorate}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={requestingLocation.governorate ? "Select neighborhood" : "Select governorate first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getNeighborhoods(requestingLocation.governorate).map((neighborhood) => (
-                        <SelectItem key={neighborhood} value={neighborhood}>
-                          {neighborhood}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="edit-request-manager-name">Site Manager Name *</Label>
-                  <Input
-                    id="edit-request-manager-name"
-                    value={requestingLocation.siteManager.name}
-                    onChange={(e) => setRequestingLocation({
-                      ...requestingLocation,
-                      siteManager: { ...requestingLocation.siteManager, name: e.target.value }
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-request-manager-phone">Manager Phone *</Label>
-                  <Input
-                    id="edit-request-manager-phone"
-                    value={requestingLocation.siteManager.phoneNumber}
-                    onChange={(e) => setRequestingLocation({
-                      ...requestingLocation,
-                      siteManager: { ...requestingLocation.siteManager, phoneNumber: e.target.value }
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-request-num-people">Number of People</Label>
-                  <Input
-                    id="edit-request-num-people"
-                    type="number"
-                    value={requestingLocation.demographics.numberOfPeople}
-                    onChange={(e) => setRequestingLocation({
-                      ...requestingLocation,
-                      demographics: { ...requestingLocation.demographics, numberOfPeople: parseInt(e.target.value) || 0 }
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-request-num-children">Number of Children</Label>
-                  <Input
-                    id="edit-request-num-children"
-                    type="number"
-                    value={requestingLocation.demographics.numberOfChildren}
-                    onChange={(e) => setRequestingLocation({
-                      ...requestingLocation,
-                      demographics: { ...requestingLocation.demographics, numberOfChildren: parseInt(e.target.value) || 0 }
-                    })}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>GPS Coordinates</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Input
-                      type="number"
-                      step="any"
-                      value={requestingLocation.gpsCoordinates.latitude}
-                      onChange={(e) => setRequestingLocation({
-                        ...requestingLocation,
-                        gpsCoordinates: { ...requestingLocation.gpsCoordinates, latitude: parseFloat(e.target.value) || 0 }
-                      })}
-                      placeholder="Latitude"
-                    />
-                    <Input
-                      type="number"
-                      step="any"
-                      value={requestingLocation.gpsCoordinates.longitude}
-                      onChange={(e) => setRequestingLocation({
-                        ...requestingLocation,
-                        gpsCoordinates: { ...requestingLocation.gpsCoordinates, longitude: parseFloat(e.target.value) || 0 }
-                      })}
-                      placeholder="Longitude"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        if (navigator.geolocation) {
-                          navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                              const { latitude, longitude } = position.coords
-                              setRequestingLocation({
-                                ...requestingLocation,
-                                gpsCoordinates: { latitude, longitude }
-                              })
-                              toast.success('GPS coordinates updated!')
-                            },
-                            () => toast.error('Unable to get GPS location')
-                          )
-                        }
-                      }}
-                    >
-                      <Navigation className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {requestType === 'delete' && requestingLocation && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <h3 className="font-medium text-red-800 mb-2">Location to be deleted:</h3>
-                <div className="text-sm text-red-700">
-                  <p><strong>Name:</strong> {requestingLocation.name}</p>
-                  <p><strong>Type:</strong> {requestingLocation.type}</p>
-                  <p><strong>Location:</strong> {requestingLocation.neighborhood}, {requestingLocation.governorate}</p>
-                  <p><strong>Manager:</strong> {requestingLocation.siteManager.name}</p>
-                  <p className="mt-2 text-red-600">⚠️ This action cannot be undone once approved by admin.</p>
-                </div>
-              </div>
-            )}
-
-            <div className="mt-4">
-              <Label htmlFor="request-notes">Additional Notes (Optional)</Label>
-              <Textarea
-                id="request-notes"
-                value={requestNotes}
-                onChange={(e) => setRequestNotes(e.target.value)}
-                placeholder="Add any additional information or reasons for this request..."
-                rows={3}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRequestDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={submitLocationRequest} disabled={loading}>
-                <Send className="h-4 w-4 mr-2" />
-                {loading ? 'Submitting...' : 'Submit Request'}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -38,6 +39,8 @@ export default function WorkshopsPage() {
   const [newParticipant, setNewParticipant] = useState({
     name: '',
     age: 0,
+    gender: '' as 'male' | 'female' | 'other' | '',
+    idNumber: '',
     phoneNumber: '',
     specialStatus: {
       isDisabled: false,
@@ -162,8 +165,8 @@ export default function WorkshopsPage() {
   }
 
   async function addParticipant() {
-    if (!selectedWorkshopId || !newParticipant.name || !newParticipant.age || !newParticipant.phoneNumber) {
-      toast.error('Please select a workshop and fill in all required participant fields')
+    if (!selectedWorkshopId || !newParticipant.name || !newParticipant.age || !newParticipant.gender || !newParticipant.idNumber || !newParticipant.phoneNumber) {
+      toast.error('Please select a workshop and fill in all required participant fields (name, age, gender, ID number, phone)')
       return
     }
 
@@ -189,6 +192,8 @@ export default function WorkshopsPage() {
       setNewParticipant({
         name: '',
         age: 0,
+        gender: '' as 'male' | 'female' | 'other' | '',
+        idNumber: '',
         phoneNumber: '',
         specialStatus: {
           isDisabled: false,
@@ -430,11 +435,10 @@ export default function WorkshopsPage() {
                   placeholder="Select Location"
                   disabled={loading}
                 />
-                <Input
-                  type="number"
+                <NumberInput
                   placeholder="Expected Participants"
                   value={newWorkshop.expectedParticipants}
-                  onChange={(e) => setNewWorkshop({ ...newWorkshop, expectedParticipants: parseInt(e.target.value) || 0 })}
+                  onChange={(value) => setNewWorkshop({ ...newWorkshop, expectedParticipants: value })}
                   disabled={loading}
                 />
                 <Button
@@ -457,6 +461,7 @@ export default function WorkshopsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Code</TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Participants</TableHead>
@@ -467,6 +472,11 @@ export default function WorkshopsPage() {
                 <TableBody>
                   {workshops.map((workshop) => (
                     <TableRow key={workshop._id}>
+                      <TableCell>
+                        <div className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                          {workshop.workshopCode || 'N/A'}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         {editingId === workshop._id ? (
                           <Input
@@ -492,11 +502,10 @@ export default function WorkshopsPage() {
                       </TableCell>
                       <TableCell>
                         {editingId === workshop._id ? (
-                          <Input
-                            type="number"
+                          <NumberInput
                             value={workshop.actualParticipants}
-                            onChange={(e) => setWorkshops(workshops.map(w =>
-                              w._id === workshop._id ? { ...w, actualParticipants: parseInt(e.target.value) || 0 } : w
+                            onChange={(value) => setWorkshops(workshops.map(w =>
+                              w._id === workshop._id ? { ...w, actualParticipants: value } : w
                             ))}
                             className="h-8"
                           />
@@ -621,7 +630,7 @@ export default function WorkshopsPage() {
                 <SelectContent>
                   {workshops.map((workshop) => (
                     <SelectItem key={workshop._id} value={workshop._id}>
-                      {workshop.title} - {workshop.date} at {workshop.locationName || 'Unknown Location'}
+                      {workshop.workshopCode ? `[${workshop.workshopCode}] ` : ''}{workshop.title} - {workshop.date} at {workshop.locationName || 'Unknown Location'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -650,12 +659,38 @@ export default function WorkshopsPage() {
                     </div>
                     <div>
                       <Label htmlFor="participant-age">Age *</Label>
-                      <Input
+                      <NumberInput
                         id="participant-age"
-                        type="number"
                         placeholder="Enter age"
                         value={newParticipant.age}
-                        onChange={(e) => setNewParticipant({ ...newParticipant, age: parseInt(e.target.value) || 0 })}
+                        onChange={(value) => setNewParticipant({ ...newParticipant, age: value })}
+                        disabled={loading}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="participant-gender">Gender *</Label>
+                      <Select
+                        value={newParticipant.gender}
+                        onValueChange={(value) => setNewParticipant({ ...newParticipant, gender: value as 'male' | 'female' | 'other' })}
+                        disabled={loading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">👨 Male</SelectItem>
+                          <SelectItem value="female">👩 Female</SelectItem>
+                          <SelectItem value="other">🏳️‍⚧️ Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="participant-id">ID Number *</Label>
+                      <Input
+                        id="participant-id"
+                        placeholder="Enter national ID or identification number"
+                        value={newParticipant.idNumber}
+                        onChange={(e) => setNewParticipant({ ...newParticipant, idNumber: e.target.value })}
                         disabled={loading}
                       />
                     </div>
@@ -755,7 +790,7 @@ export default function WorkshopsPage() {
                               <div className="flex-1">
                                 <h4 className="font-medium mb-2">{participant.name}</h4>
                                 <p className="text-sm text-muted-foreground mb-2">
-                                  Age: {participant.age} | Phone: {participant.phoneNumber}
+                                  Age: {participant.age} | {participant.gender === 'male' ? '👨' : participant.gender === 'female' ? '👩' : '🏳️‍⚧️'} {participant.gender || 'N/A'} | ID: {participant.idNumber || 'N/A'} | Phone: {participant.phoneNumber}
                                 </p>
                                 <div className="flex gap-2 flex-wrap mb-2">
                                   {participant.specialStatus.isDisabled && <Badge variant="secondary">🦽 Disabled</Badge>}
@@ -806,7 +841,7 @@ export default function WorkshopsPage() {
               <option value="">Choose a workshop...</option>
               {workshops.map((workshop) => (
                 <option key={workshop._id} value={workshop._id}>
-                  {workshop.title} - {workshop.date} at {workshop.locationName || 'Unknown Location'}
+                  {workshop.workshopCode ? `[${workshop.workshopCode}] ` : ''}{workshop.title} - {workshop.date} at {workshop.locationName || 'Unknown Location'}
                 </option>
               ))}
             </select>
@@ -859,12 +894,11 @@ export default function WorkshopsPage() {
                     </div>
                     <div>
                       <Label htmlFor="bulk-quantity-input">Quantity per Participant</Label>
-                      <input
+                      <NumberInput
                         id="bulk-quantity-input"
-                        type="number"
                         placeholder="Enter quantity"
                         value={bulkDistribution.quantityPerParticipant}
-                        onChange={(e) => setBulkDistribution({ ...bulkDistribution, quantityPerParticipant: parseInt(e.target.value) || 0 })}
+                        onChange={(value) => setBulkDistribution({ ...bulkDistribution, quantityPerParticipant: value })}
                         style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
                         disabled={loading}
                       />
@@ -915,7 +949,7 @@ export default function WorkshopsPage() {
                         <option value="">Select Participant</option>
                         {participants.map((participant) => (
                           <option key={participant._id} value={participant._id}>
-                            {participant.name} (Age: {participant.age})
+                            {participant.name} (Age: {participant.age}, {participant.gender === 'male' ? '👨' : participant.gender === 'female' ? '👩' : '🏳️‍⚧️'} {participant.gender || 'N/A'}, ID: {participant.idNumber || 'N/A'})
                           </option>
                         ))}
                       </select>
@@ -939,13 +973,12 @@ export default function WorkshopsPage() {
                     </div>
                     <div>
                       <Label htmlFor="individual-quantity-input">Quantity</Label>
-                      <input
+                      <NumberInput
                         id="individual-quantity-input"
-                        type="number"
                         placeholder="Enter quantity"
                         value={materialDistribution.quantity}
                         max={userBalances.find(b => b.productId === materialDistribution.productId)?.availableQuantity || 0}
-                        onChange={(e) => setMaterialDistribution({ ...materialDistribution, quantity: parseInt(e.target.value) || 0 })}
+                        onChange={(value) => setMaterialDistribution({ ...materialDistribution, quantity: value })}
                         style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
                         disabled={loading}
                       />
@@ -984,7 +1017,7 @@ export default function WorkshopsPage() {
                           <div style={{ flex: 1 }}>
                             <h4 style={{ margin: '0 0 5px 0' }}>{participant.name}</h4>
                             <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>
-                              Age: {participant.age} | Phone: {participant.phoneNumber}
+                              Age: {participant.age} | {participant.gender === 'male' ? '👨' : participant.gender === 'female' ? '👩' : '🏳️‍⚧️'} {participant.gender || 'N/A'} | ID: {participant.idNumber || 'N/A'} | Phone: {participant.phoneNumber}
                             </p>
 
                             {/* Materials Received */}

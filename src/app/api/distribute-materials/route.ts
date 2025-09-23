@@ -31,7 +31,7 @@ async function handleDistributeMaterials(request: NextRequest, session: AuthSess
     }
 
     // Get user's balance for this product
-    const userBalance = await db.collection('userBalances').findOne({
+    const userBalance = await db.collection('user_balances').findOne({
       userId: session.user.id,
       productId: productId
     })
@@ -54,7 +54,7 @@ async function handleDistributeMaterials(request: NextRequest, session: AuthSess
     const now = new Date().toISOString()
 
     // 1. Update user balance
-    await db.collection('userBalances').updateOne(
+    await db.collection('user_balances').updateOne(
       { userId: session.user.id, productId: productId },
       { $inc: { availableQuantity: -quantity } }
     )

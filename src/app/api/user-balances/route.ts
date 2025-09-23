@@ -25,7 +25,7 @@ async function handleGetBalances(request: NextRequest, session: AuthSession) {
       }
     }
 
-    const balances = await db.collection('userBalances').find(query).toArray()
+    const balances = await db.collection('user_balances').find(query).toArray()
     return NextResponse.json(balances)
   } catch (error) {
     console.error('Fetch balances error:', error)
@@ -57,11 +57,11 @@ async function handleAllocateStock(request: NextRequest, session: AuthSession) {
     }
 
     // Check if user balance already exists for this product
-    const existingBalance = await db.collection('userBalances').findOne({ userId, productId })
+    const existingBalance = await db.collection('user_balances').findOne({ userId, productId })
 
     if (existingBalance) {
       // Update existing balance
-      await db.collection('userBalances').updateOne(
+      await db.collection('user_balances').updateOne(
         { userId, productId },
         {
           $inc: {
@@ -73,7 +73,7 @@ async function handleAllocateStock(request: NextRequest, session: AuthSession) {
       )
     } else {
       // Create new balance
-      await db.collection('userBalances').insertOne({
+      await db.collection('user_balances').insertOne({
         userId,
         productId,
         productName: product.name,

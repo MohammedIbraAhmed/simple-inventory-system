@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { User, Product, UserBalance } from '@/types/product'
+import { User, Product, UserBalance, LocationRequest } from '@/types/product'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -20,6 +21,7 @@ export default function AdminPage() {
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [locationRequests, setLocationRequests] = useState<LocationRequest[]>([])
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -49,7 +51,7 @@ export default function AdminPage() {
     role: 'user'
   })
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'users' | 'allocation'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'allocation' | 'location-requests'>('users')
 
   useEffect(() => {
     if (status === 'loading') return
@@ -63,6 +65,7 @@ export default function AdminPage() {
     }
     fetchUsers()
     fetchProducts()
+    fetchLocationRequests()
   }, [session, status, router])
 
   async function fetchUsers() {
@@ -91,6 +94,56 @@ export default function AdminPage() {
       setProducts(response.data || [])
     } catch (err) {
       toast.error('Failed to fetch products')
+    }
+  }
+
+  async function fetchLocationRequests() {
+    try {
+      const res = await fetch('/api/location-requests')
+      const response = await res.json()
+      setLocationRequests(response || [])
+    } catch (err) {
+      console.error('Failed to fetch location requests:', err)
+    }
+  }
+
+  async function approveLocationRequest(requestId: string, adminNotes?: string) {
+    try {
+      const res = await fetch(`/api/location-requests/${requestId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve', adminNotes })
+      })
+
+      if (res.ok) {
+        toast.success('Location request approved successfully!')
+        fetchLocationRequests()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to approve request')
+      }
+    } catch (err) {
+      toast.error('Failed to approve request')
+    }
+  }
+
+  async function rejectLocationRequest(requestId: string, adminNotes?: string) {
+    try {
+      const res = await fetch(`/api/location-requests/${requestId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject', adminNotes })
+      })
+
+      if (res.ok) {
+        toast.success('Location request rejected')
+        fetchLocationRequests()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to reject request')
+      }
+    } catch (err) {
+      toast.error('Failed to reject request')
     }
   }
 
@@ -371,10 +424,11 @@ export default function AdminPage() {
       </div>
 
       {/* Tab Navigation */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'users' | 'allocation')} className="mb-6">
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 h-auto md:h-10">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'users' | 'allocation' | 'location-requests')} className="mb-6">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 h-auto md:h-10">
           <TabsTrigger value="users">👥 User Management</TabsTrigger>
           <TabsTrigger value="allocation">📤 Stock Allocation</TabsTrigger>
+          <TabsTrigger value="location-requests">📍 Location Requests</TabsTrigger>
         </TabsList>
 
 
@@ -586,12 +640,11 @@ export default function AdminPage() {
                   </option>
                 )) : []}
               </select>
-              <input
-                type="number"
+              <NumberInput
                 placeholder="Quantity"
                 value={allocation.quantity}
                 max={selectedProduct?.stock || 0}
-                onChange={(e) => setAllocation({ ...allocation, quantity: parseInt(e.target.value) || 0 })}
+                onChange={(value) => setAllocation({ ...allocation, quantity: value })}
                 style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
                 disabled={loading}
               />
@@ -639,6 +692,94 @@ export default function AdminPage() {
               </div>
             )) : []}
           </div>
+        </TabsContent>
+
+        <TabsContent value="location-requests" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>📍 Location Requests</CardTitle>
+              <CardDescription>
+                Review and approve location requests from users
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {locationRequests.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No location requests found
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {locationRequests.map((request) => (
+                    <Card key={request._id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={
+                                request.status === 'pending' ? 'secondary' :
+                                request.status === 'approved' ? 'default' : 'destructive'
+                              }>
+                                {request.status}
+                              </Badge>
+                              <span className="font-medium text-sm text-muted-foreground">
+                                {request.requestType.toUpperCase()}
+                              </span>
+                            </div>
+
+                            <div>
+                              <h4 className="font-semibold">{request.locationData.name}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {request.locationData.governorate} - {request.locationData.neighborhood}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Type: {request.locationData.type.replace(/_/g, ' ')}
+                              </p>
+                            </div>
+
+                            <div className="text-sm">
+                              <p><strong>Site Manager:</strong> {request.locationData.siteManager.name}</p>
+                              <p><strong>Phone:</strong> {request.locationData.siteManager.phoneNumber}</p>
+                              <p><strong>GPS:</strong> {request.locationData.gpsCoordinates.latitude.toFixed(4)}, {request.locationData.gpsCoordinates.longitude.toFixed(4)}</p>
+                            </div>
+
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>Requested by: {request.requestedByName}</span>
+                              <span>Date: {new Date(request.createdAt).toLocaleDateString()}</span>
+                            </div>
+
+                            {request.adminNotes && (
+                              <div className="bg-muted p-2 rounded-md text-sm">
+                                <strong>Admin Notes:</strong> {request.adminNotes}
+                              </div>
+                            )}
+                          </div>
+
+                          {request.status === 'pending' && (
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                size="sm"
+                                onClick={() => approveLocationRequest(request._id!)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => rejectLocationRequest(request._id!)}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
