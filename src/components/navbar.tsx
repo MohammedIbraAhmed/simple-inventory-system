@@ -32,7 +32,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { Menu, Home, Users, MapPin, BarChart3, Settings, Lock, LogOut, User, ChevronDown } from 'lucide-react'
+import { Menu, Home, Users, MapPin, BarChart3, Settings, Lock, LogOut, User, ChevronDown, Package, Package2 } from 'lucide-react'
 import { useState } from 'react'
 
 // Helper function to get user initials
@@ -100,7 +100,7 @@ export function Navbar() {
             <NavigationMenuList>
               <NavigationMenuItem>
                 <Link href="/dashboard" legacyBehavior passHref>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "flex items-center", pathname === '/dashboard' && 'bg-accent text-accent-foreground')}>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "flex items-center flex-row", pathname === '/dashboard' && 'bg-accent text-accent-foreground')}>
                     <Home className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span>Dashboard</span>
                   </NavigationMenuLink>
@@ -109,7 +109,7 @@ export function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/workshops" legacyBehavior passHref>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "flex items-center", pathname === '/workshops' && 'bg-accent text-accent-foreground')}>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "flex items-center flex-row", pathname === '/workshops' && 'bg-accent text-accent-foreground')}>
                     <Users className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span>Workshops</span>
                   </NavigationMenuLink>
@@ -118,7 +118,7 @@ export function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/locations" legacyBehavior passHref>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "flex items-center", pathname === '/locations' && 'bg-accent text-accent-foreground')}>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "flex items-center flex-row", pathname === '/locations' && 'bg-accent text-accent-foreground')}>
                     <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span>Locations</span>
                   </NavigationMenuLink>
@@ -126,7 +126,7 @@ export function Navbar() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="flex items-center">
+                <NavigationMenuTrigger className="flex items-center flex-row">
                   <BarChart3 className="mr-2 h-4 w-4 flex-shrink-0" />
                   <span>Reports</span>
                 </NavigationMenuTrigger>
@@ -154,7 +154,10 @@ export function Navbar() {
                           href="/reports"
                           className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                         >
-                          <div className="text-sm font-medium leading-none">Workshop Reports</div>
+                          <div className="text-sm font-medium leading-none flex items-center">
+                            <Users className="mr-2 h-4 w-4" />
+                            Workshop Reports
+                          </div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Detailed analysis of workshop activities and participation.
                           </p>
@@ -167,7 +170,10 @@ export function Navbar() {
                           href="/reports"
                           className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                         >
-                          <div className="text-sm font-medium leading-none">Inventory Reports</div>
+                          <div className="text-sm font-medium leading-none flex items-center">
+                            <BarChart3 className="mr-2 h-4 w-4" />
+                            Inventory Reports
+                          </div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Stock levels, distributions, and material usage analytics.
                           </p>
@@ -180,7 +186,7 @@ export function Navbar() {
 
               {session.user.role === 'admin' && (
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="flex items-center">
+                  <NavigationMenuTrigger className="flex items-center flex-row">
                     <Settings className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span>Admin</span>
                   </NavigationMenuTrigger>
@@ -192,7 +198,10 @@ export function Navbar() {
                             href="/admin"
                             className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           >
-                            <div className="text-sm font-medium leading-none">👥 User Management</div>
+                            <div className="text-sm font-medium leading-none flex items-center">
+                              <Users className="mr-2 h-4 w-4" />
+                              User Management
+                            </div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                               Create and manage user accounts, roles, and permissions.
                             </p>
@@ -205,7 +214,10 @@ export function Navbar() {
                             href="/admin"
                             className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           >
-                            <div className="text-sm font-medium leading-none">📤 Stock Allocation</div>
+                            <div className="text-sm font-medium leading-none flex items-center">
+                              <Package className="mr-2 h-4 w-4" />
+                              Stock Allocation
+                            </div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                               Allocate materials to users and manage stock distribution.
                             </p>
@@ -218,7 +230,10 @@ export function Navbar() {
                             href="/dashboard"
                             className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           >
-                            <div className="text-sm font-medium leading-none">📦 Inventory Management</div>
+                            <div className="text-sm font-medium leading-none flex items-center">
+                              <Package2 className="mr-2 h-4 w-4" />
+                              Inventory Management
+                            </div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                               Add, edit, and monitor product inventory levels.
                             </p>
@@ -231,7 +246,10 @@ export function Navbar() {
                             href="/reports"
                             className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                           >
-                            <div className="text-sm font-medium leading-none">📊 System Reports</div>
+                            <div className="text-sm font-medium leading-none flex items-center">
+                              <BarChart3 className="mr-2 h-4 w-4" />
+                              System Reports
+                            </div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                               Comprehensive system analytics and reporting.
                             </p>
@@ -377,91 +395,65 @@ export function Navbar() {
           </Sheet>
         </div>
 
-        <div className="flex items-center justify-between space-x-2 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            <div className="flex items-center space-x-1 md:space-x-2">
-              <NotificationSystem userId={session.user.id} userRole={session.user.role} />
+        <div className="flex items-center justify-end space-x-3 ml-auto">
+          <NotificationSystem userId={session.user.id} userRole={session.user.role} />
 
-              {/* Profile Dropdown Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center space-x-2 px-2 md:px-3 py-2 h-auto hover:bg-accent/50 transition-colors duration-200 rounded-md"
+          {/* Profile Dropdown Menu - Smaller and Aligned */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="flex items-center space-x-2 px-2 py-2 h-auto hover:bg-accent/50 transition-colors duration-200 rounded-md"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={session.user?.image || ''} alt={session.user?.name || ''} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                    {getUserInitials(session.user?.name, session.user?.email)}
+                  </AvatarFallback>
+                </Avatar>
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="w-56"
+              align="end"
+              sideOffset={8}
+              forceMount
+            >
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none truncate">
+                    {session.user?.name || 'User'}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground truncate">
+                    {session.user?.email}
+                  </p>
+                  <Badge
+                    variant={session.user.role === 'admin' ? 'default' : 'secondary'}
+                    className="text-xs w-fit mt-1"
                   >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={session.user?.image || ''} alt={session.user?.name || ''} />
-                      <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
-                        {getUserInitials(session.user?.name, session.user?.email)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="hidden md:flex md:flex-col md:items-start md:text-left">
-                      <span className="text-sm font-medium leading-none">
-                        {session.user?.name || session.user?.email}
-                      </span>
-                      <div className="flex items-center gap-1 mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {session.user.role === 'admin' ? 'Admin' : 'User'}
-                        </Badge>
-                      </div>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-64 p-2"
-                  align="end"
-                  sideOffset={8}
-                  forceMount
-                >
-                  <DropdownMenuLabel className="font-normal p-3">
-                    <div className="flex flex-col space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-10 w-10 ring-2 ring-border">
-                          <AvatarImage src={session.user?.image || ''} alt={session.user?.name || ''} />
-                          <AvatarFallback className="bg-primary text-primary-foreground">
-                            {getUserInitials(session.user?.name, session.user?.email)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col space-y-1 min-w-0 flex-1">
-                          <p className="text-sm font-medium leading-none truncate">
-                            {session.user?.name || 'User'}
-                          </p>
-                          <p className="text-xs leading-none text-muted-foreground truncate">
-                            {session.user?.email}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <Badge
-                          variant={session.user.role === 'admin' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          <User className="mr-1 h-3 w-3" />
-                          {session.user.role === 'admin' ? 'Administrator' : 'User'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link href="/auth/change-password" className="flex items-center px-3 py-2">
-                      <Lock className="mr-3 h-4 w-4" />
-                      <span>Change Password</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="cursor-pointer px-3 py-2 text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-                    onClick={() => signOut()}
-                  >
-                    <LogOut className="mr-3 h-4 w-4" />
-                    <span>Sign Out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
+                    <User className="mr-1 h-3 w-3" />
+                    {session.user.role === 'admin' ? 'Admin' : 'User'}
+                  </Badge>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href="/auth/change-password" className="flex items-center">
+                  <Lock className="mr-2 h-4 w-4" />
+                  <span>Change Password</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                onClick={() => signOut()}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
