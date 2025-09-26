@@ -54,32 +54,78 @@ if (process.env.NODE_ENV === 'development') {
   clientPromise = client.connect()
 }
 
+// Circuit breaker pattern for database connections
+let failureCount = 0
+let lastFailureTime = 0
+const MAX_FAILURES = 5
+const CIRCUIT_BREAKER_TIMEOUT = 30000 // 30 seconds
+
 export async function connectDB(): Promise<Db> {
+  const now = Date.now()
+
+  // Circuit breaker: if too many failures, wait before trying again
+  if (failureCount >= MAX_FAILURES && (now - lastFailureTime) < CIRCUIT_BREAKER_TIMEOUT) {
+    const remainingTime = Math.ceil((CIRCUIT_BREAKER_TIMEOUT - (now - lastFailureTime)) / 1000)
+    throw new Error(`Database circuit breaker active. Try again in ${remainingTime} seconds`)
+  }
+
   try {
     const client = await clientPromise
-    // Test the connection
-    await client.db('admin').admin().ping()
-    // Use the correct database name from the URI
-    return client.db('sinv')
-  } catch (error) {
-    console.error('Database connection error:', error)
 
-    // Provide more specific error messages
-    if (error instanceof Error) {
-      if (error.message.includes('Server selection timed out')) {
-        console.error('Atlas Connection Help:')
-        console.error('1. Check if your MongoDB Atlas cluster is running (not paused)')
-        console.error('2. Verify your IP address is whitelisted in Atlas Network Access')
-        console.error('3. Ensure your connection string is correct')
-        console.error('4. Check your network/firewall settings')
-      } else if (error.message.includes('Authentication failed')) {
-        console.error('Atlas Authentication Help:')
-        console.error('1. Verify your username and password in the connection string')
-        console.error('2. Ensure the database user has proper permissions')
+    // Test the connection with retry logic
+    let retries = 3
+    while (retries > 0) {
+      try {
+        await client.db('admin').admin().ping()
+        break
+      } catch (pingError) {
+        retries--
+        if (retries === 0) throw pingError
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, (4 - retries) * 1000))
       }
     }
 
-    throw new Error('Failed to connect to database')
+    // Reset failure count on successful connection
+    failureCount = 0
+
+    // Use the correct database name from the URI
+    return client.db('sinv')
+  } catch (error) {
+    // Update failure tracking
+    failureCount++
+    lastFailureTime = now
+
+    console.error('Database connection error:', error)
+    console.error(`Failure count: ${failureCount}/${MAX_FAILURES}`)
+
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('Server selection timed out') || error.message.includes('connection <monitor> to')) {
+        console.error('🔄 MongoDB Atlas Connection Issues Detected:')
+        console.error('1. ✅ Check if your MongoDB Atlas cluster is running (not paused)')
+        console.error('2. 🌐 Verify your IP address is whitelisted in Atlas Network Access')
+        console.error('3. 🔗 Ensure your connection string is correct in .env.local')
+        console.error('4. 🔥 Check your network/firewall settings')
+        console.error('5. ⏰ Atlas may be experiencing high load - wait and retry')
+      } else if (error.message.includes('Authentication failed')) {
+        console.error('🔐 MongoDB Atlas Authentication Issues:')
+        console.error('1. Verify your username and password in the connection string')
+        console.error('2. Ensure the database user has proper permissions')
+      } else if (error.message.includes('Socket') && error.message.includes('timed out')) {
+        console.error('⚡ Network timeout detected - this is usually temporary')
+        console.error('1. Check your internet connection stability')
+        console.error('2. Atlas cluster might be under heavy load')
+        console.error('3. Try again in a few moments')
+      }
+    }
+
+    // Provide different error messages based on failure count
+    if (failureCount < MAX_FAILURES) {
+      throw new Error(`Database connection failed (attempt ${failureCount}/${MAX_FAILURES}). Retrying...`)
+    } else {
+      throw new Error(`Database connection failed after ${MAX_FAILURES} attempts. Circuit breaker activated for ${CIRCUIT_BREAKER_TIMEOUT/1000} seconds`)
+    }
   }
 }
 

@@ -1,0 +1,6 @@
+scripts/
+*.md
+.env.local
+.env.example
+README.md
+docs/

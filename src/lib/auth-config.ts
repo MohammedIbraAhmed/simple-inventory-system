@@ -4,7 +4,7 @@ import { verifyPassword } from '@/lib/auth-utils'
 import { validateData, LoginSchema } from '@/lib/validations'
 import { getBaseUrl } from '@/lib/config'
 
-export const authOptions = {
+export const authConfig = {
   session: {
     strategy: 'jwt' as const,
   },
@@ -98,3 +98,5 @@ export const authOptions = {
     }
   }
 }
+
+export const authOptions = authConfig

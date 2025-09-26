@@ -14,9 +14,9 @@ async function createIndexes() {
       {
         collection: 'users',
         indexes: [
-          { email: 1 }, // Unique constraint for authentication
-          { role: 1 }, // Role-based queries
-          { 'createdAt': -1 } // Sorting by creation date
+          { email: 1 } as const, // Unique constraint for authentication
+          { role: 1 } as const, // Role-based queries
+          { createdAt: -1 } as const // Sorting by creation date
         ]
       },
 

@@ -4,10 +4,13 @@ import { Session } from '@/types/product'
 import { createAuthHandler, AuthSession } from '@/lib/auth-middleware'
 import { ObjectId } from 'mongodb'
 
-async function handleGetSession(request: NextRequest, session: AuthSession, context: { params: { id: string } }) {
+async function handleGetSession(request: NextRequest, session: AuthSession, params: { id: string } | undefined) {
   try {
     const db = await connectDB()
-    const { id } = context.params
+    if (!params?.id) {
+      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 })
+    }
+    const { id } = params
 
     const sessionDoc = await db.collection('sessions').findOne({ _id: new ObjectId(id) })
     if (!sessionDoc) {
@@ -48,10 +51,21 @@ async function handleGetSession(request: NextRequest, session: AuthSession, cont
   }
 }
 
-async function handleUpdateSession(request: NextRequest, session: AuthSession, context: { params: { id: string } }) {
+async function handleUpdateSession(request: NextRequest, session: AuthSession, params: { id: string } | undefined) {
   try {
     const db = await connectDB()
-    const { id } = context.params
+
+    // Extract ID from params or URL path as fallback
+    let id = params?.id
+    if (!id) {
+      const pathname = request.nextUrl.pathname
+      const idFromPath = pathname.split('/').pop()
+      if (idFromPath) {
+        id = idFromPath
+      } else {
+        return NextResponse.json({ error: 'Session ID is required' }, { status: 400 })
+      }
+    }
     const sessionUpdates: Partial<Session> = await request.json()
 
     // Check if session exists
@@ -139,10 +153,13 @@ async function handleUpdateSession(request: NextRequest, session: AuthSession, c
   }
 }
 
-async function handleDeleteSession(request: NextRequest, session: AuthSession, context: { params: { id: string } }) {
+async function handleDeleteSession(request: NextRequest, session: AuthSession, params: { id: string } | undefined) {
   try {
     const db = await connectDB()
-    const { id } = context.params
+    if (!params?.id) {
+      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 })
+    }
+    const { id } = params
 
     // Check if session exists
     const existingSession = await db.collection('sessions').findOne({ _id: new ObjectId(id) })

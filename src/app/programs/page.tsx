@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Program, Session, ProgramParticipant, SessionAttendance, Location } from '@/types/product'
+import { Program, Session, ProgramParticipant, SessionAttendance, Location, UserBalance, Product } from '@/types/product'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -63,7 +63,20 @@ export default function ProgramsPage() {
     }
   })
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'programs' | 'sessions' | 'participants' | 'attendance'>('programs')
+  const [activeTab, setActiveTab] = useState<'programs' | 'sessions' | 'participants' | 'attendance' | 'materials'>('programs')
+
+  // Material distribution state
+  const [userBalances, setUserBalances] = useState<UserBalance[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [selectedParticipantForDistribution, setSelectedParticipantForDistribution] = useState<string | null>(null)
+  const [materialDistribution, setMaterialDistribution] = useState({
+    productId: '',
+    quantity: 0
+  })
+  const [bulkDistribution, setBulkDistribution] = useState({
+    productId: '',
+    quantityPerParticipant: 0
+  })
 
   useEffect(() => {
     if (status === 'loading') return
@@ -72,6 +85,8 @@ export default function ProgramsPage() {
       return
     }
     fetchPrograms()
+    fetchUserBalances()
+    fetchProducts()
   }, [session, status, router])
 
   useEffect(() => {
@@ -130,6 +145,170 @@ export default function ProgramsPage() {
       setAttendance(data)
     } catch (err) {
       // Silent fail for attendance
+    }
+  }
+
+  async function fetchUserBalances() {
+    try {
+      const res = await fetch('/api/user-balances')
+      const data = await res.json()
+      setUserBalances(data)
+    } catch (err) {
+      toast.error('Failed to fetch user balances')
+    }
+  }
+
+  async function fetchProducts() {
+    try {
+      const res = await fetch('/api/products')
+      const data = await res.json()
+      setProducts(data)
+    } catch (err) {
+      toast.error('Failed to fetch products')
+    }
+  }
+
+  async function distributeSessionMaterial() {
+    if (!selectedParticipantForDistribution || !materialDistribution.productId || !materialDistribution.quantity || !selectedSessionId) {
+      toast.error('Please select participant, product, quantity, and ensure session is selected')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/distribute-materials/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          programParticipantId: selectedParticipantForDistribution,
+          productId: materialDistribution.productId,
+          quantity: materialDistribution.quantity,
+          sessionId: selectedSessionId
+        })
+      })
+
+      const result = await res.json()
+      if (!res.ok) {
+        toast.error(result.error || 'Failed to distribute materials')
+        return
+      }
+
+      const participantName = participants.find(p => p._id === selectedParticipantForDistribution)?.name
+      const productName = userBalances.find(b => b.productId === materialDistribution.productId)?.productName
+      toast.success(`Successfully distributed ${materialDistribution.quantity} ${productName} to ${participantName}`)
+
+      setMaterialDistribution({ productId: '', quantity: 0 })
+      setSelectedParticipantForDistribution(null)
+      fetchUserBalances()
+      fetchAttendance()
+    } catch (err) {
+      toast.error('Failed to distribute materials')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function bulkDistributeSessionMaterials() {
+    if (!bulkDistribution.productId || !bulkDistribution.quantityPerParticipant || !selectedSessionId) {
+      toast.error('Please select product, quantity per participant, and ensure session is selected')
+      return
+    }
+
+    const sessionAttendees = attendance.filter(a => ['attended', 'late', 'left-early'].includes(a.attendanceStatus))
+    if (sessionAttendees.length === 0) {
+      toast.error('No attendees found for this session')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/distribute-materials/session/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: selectedSessionId,
+          productId: bulkDistribution.productId,
+          quantityPerParticipant: bulkDistribution.quantityPerParticipant
+        })
+      })
+
+      const result = await res.json()
+      if (!res.ok) {
+        toast.error(result.error || 'Failed to bulk distribute materials')
+        return
+      }
+
+      toast.success(`Successfully distributed ${result.distributed.totalQuantity} ${result.distributed.productName} to ${result.distributed.participantCount} attendees in ${result.distributed.sessionTitle}`)
+
+      setBulkDistribution({ productId: '', quantityPerParticipant: 0 })
+      fetchUserBalances()
+      fetchAttendance()
+    } catch (err) {
+      toast.error('Failed to bulk distribute materials')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function updateSessionStatus(sessionId: string, newStatus: 'planned' | 'ongoing' | 'completed' | 'cancelled') {
+    if (!sessionId) return
+
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      const result = await res.json()
+      if (!res.ok) {
+        toast.error(result.error || 'Failed to update session status')
+        return
+      }
+
+      toast.success(`Session status updated to ${newStatus}`)
+      fetchSessions() // Refresh the sessions list
+    } catch (err) {
+      toast.error('Failed to update session status')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function updateAttendanceStatus(participantId: string, status: 'registered' | 'attended' | 'absent' | 'late' | 'left-early') {
+    if (!selectedSessionId) {
+      toast.error('Please select a session first')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/session-attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: selectedSessionId,
+          programParticipantId: participantId,
+          attendanceStatus: status,
+          checkInTime: status !== 'absent' ? new Date().toISOString() : undefined,
+          recordedBy: session?.user?.id,
+          recordedAt: new Date().toISOString()
+        })
+      })
+
+      const result = await res.json()
+      if (!res.ok) {
+        toast.error(result.error || 'Failed to update attendance')
+        return
+      }
+
+      toast.success(`Attendance updated successfully`)
+      fetchAttendance() // Refresh attendance data
+    } catch (err) {
+      toast.error('Failed to update attendance')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -323,11 +502,12 @@ export default function ProgramsPage() {
 
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="mb-6">
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 h-auto md:h-10">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-5 h-auto md:h-10">
           <TabsTrigger value="programs">📚 Programs</TabsTrigger>
           <TabsTrigger value="sessions">🎯 Sessions</TabsTrigger>
           <TabsTrigger value="participants">👥 Participants</TabsTrigger>
           <TabsTrigger value="attendance">📋 Attendance</TabsTrigger>
+          <TabsTrigger value="materials">📦 Materials</TabsTrigger>
         </TabsList>
 
         <TabsContent value="programs" className="space-y-6">
@@ -550,7 +730,10 @@ export default function ProgramsPage() {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button
-                            onClick={() => setSelectedProgramId(program._id!)}
+                            onClick={() => {
+                              setSelectedProgramId(program._id!)
+                              setActiveTab('sessions')
+                            }}
                             variant="outline"
                             size="sm"
                             className="h-7"
@@ -740,13 +923,29 @@ export default function ProgramsPage() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Button
-                                onClick={() => setSelectedSessionId(session._id!)}
-                                variant="outline"
-                                size="sm"
-                              >
-                                Attendance
-                              </Button>
+                              <div className="flex gap-1">
+                                {session.status === 'planned' && (
+                                  <Button
+                                    onClick={() => updateSessionStatus(session._id!, 'completed')}
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-green-50 hover:bg-green-100 text-green-700"
+                                    disabled={loading}
+                                  >
+                                    Mark Complete
+                                  </Button>
+                                )}
+                                <Button
+                                  onClick={() => {
+                                    setSelectedSessionId(session._id!)
+                                    setActiveTab('attendance')
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  Attendance
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1025,11 +1224,369 @@ export default function ProgramsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-10 text-muted-foreground">
-                  Attendance tracking interface will be implemented here.
-                  <br />
-                  This will include participant check-in/out, material distribution, and performance notes.
+                <div className="space-y-4">
+                  {participants.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="text-sm text-muted-foreground">
+                        Track attendance for {participants.length} enrolled participants in this session
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Participant</TableHead>
+                            <TableHead>Age/Gender</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {participants.map((participant) => {
+                            const attendanceRecord = attendance.find(a => a.programParticipantId === participant._id)
+                            return (
+                              <TableRow key={participant._id}>
+                                <TableCell className="font-medium">
+                                  {participant.name}
+                                  <div className="text-xs text-muted-foreground">
+                                    ID: {participant.idNumber}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-sm">
+                                    {participant.age} years • {participant.gender === 'male' ? '👨' : participant.gender === 'female' ? '👩' : '🏳️‍⚧️'}
+                                  </div>
+                                  {(participant.specialStatus?.isDisabled || participant.specialStatus?.isWounded || participant.specialStatus?.isSeparated || participant.specialStatus?.isUnaccompanied) && (
+                                    <div className="text-xs flex gap-1">
+                                      {participant.specialStatus.isDisabled && <span>🦽</span>}
+                                      {participant.specialStatus.isWounded && <span>🩹</span>}
+                                      {participant.specialStatus.isSeparated && <span>💔</span>}
+                                      {participant.specialStatus.isUnaccompanied && <span>👤</span>}
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {attendanceRecord ? (
+                                    <Badge variant={
+                                      attendanceRecord.attendanceStatus === 'attended' ? 'default' :
+                                      ['late', 'left-early'].includes(attendanceRecord.attendanceStatus) ? 'secondary' :
+                                      attendanceRecord.attendanceStatus === 'absent' ? 'destructive' :
+                                      'outline'
+                                    }>
+                                      {attendanceRecord.attendanceStatus}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline">Not recorded</Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-1 flex-wrap">
+                                    <Button
+                                      onClick={() => updateAttendanceStatus(participant._id!, 'attended')}
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 bg-green-50 hover:bg-green-100 text-green-700 text-xs"
+                                      disabled={loading}
+                                    >
+                                      Present
+                                    </Button>
+                                    <Button
+                                      onClick={() => updateAttendanceStatus(participant._id!, 'late')}
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 text-xs"
+                                      disabled={loading}
+                                    >
+                                      Late
+                                    </Button>
+                                    <Button
+                                      onClick={() => updateAttendanceStatus(participant._id!, 'absent')}
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 bg-red-50 hover:bg-red-100 text-red-700 text-xs"
+                                      disabled={loading}
+                                    >
+                                      Absent
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground border border-dashed rounded-lg">
+                      No participants enrolled in this program yet.
+                      <br />
+                      Go to the Participants tab to enroll participants first.
+                    </div>
+                  )}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="materials" className="space-y-6">
+          {/* Session Selection for Materials */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Session for Material Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Select value={selectedProgramId || ''} onValueChange={setSelectedProgramId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a program..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {programs.map((program) => (
+                      <SelectItem key={program._id} value={program._id!}>
+                        [{program.programCode}] {program.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedProgramId && sessions.length > 0 && (
+                  <Select value={selectedSessionId || ''} onValueChange={setSelectedSessionId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a session..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sessions.map((session) => (
+                        <SelectItem key={session._id} value={session._id!}>
+                          Session #{session.sessionNumber}: {session.title} - {session.date}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {selectedSessionId && (
+            <>
+              {/* User Available Materials */}
+              {userBalances.filter(b => b.availableQuantity > 0).length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>📦 My Available Materials</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {userBalances.filter(b => b.availableQuantity > 0).map((balance) => (
+                        <div key={balance._id} className="border rounded-lg p-4 bg-muted/50">
+                          <h4 className="font-medium text-sm">{balance.productName}</h4>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Available: <span className="font-bold text-green-600">{balance.availableQuantity}</span> units
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Bulk Distribution */}
+              {userBalances.filter(b => b.availableQuantity > 0).length > 0 && attendance.filter(a => ['attended', 'late', 'left-early'].includes(a.attendanceStatus)).length > 0 && (
+                <Card className="border-blue-200 bg-blue-50/50">
+                  <CardHeader>
+                    <CardTitle className="text-blue-800">🚀 Bulk Distribute to ALL Attendees</CardTitle>
+                    <CardDescription className="text-blue-600">
+                      Distribute materials to {attendance.filter(a => ['attended', 'late', 'left-early'].includes(a.attendanceStatus)).length} session attendees
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      <div>
+                        <Label htmlFor="bulk-material-select">Select Material</Label>
+                        <Select
+                          value={bulkDistribution.productId}
+                          onValueChange={(value) => setBulkDistribution({ ...bulkDistribution, productId: value })}
+                          disabled={loading}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose material..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {userBalances.filter(b => b.availableQuantity > 0).map((balance) => (
+                              <SelectItem key={balance.productId} value={balance.productId}>
+                                {balance.productName} (Available: {balance.availableQuantity})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="bulk-quantity-input">Quantity per Person</Label>
+                        <NumberInput
+                          placeholder="Enter quantity"
+                          value={bulkDistribution.quantityPerParticipant}
+                          onChange={(value) => setBulkDistribution({ ...bulkDistribution, quantityPerParticipant: value })}
+                          disabled={loading}
+                        />
+                      </div>
+                      <Button
+                        onClick={bulkDistributeSessionMaterials}
+                        disabled={loading || !bulkDistribution.productId || !bulkDistribution.quantityPerParticipant}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        {loading ? 'Distributing...' : 'Bulk Distribute'}
+                      </Button>
+                    </div>
+                    {bulkDistribution.productId && bulkDistribution.quantityPerParticipant > 0 && (
+                      <div className="mt-4 p-3 bg-blue-100 rounded-lg border">
+                        <p className="text-sm"><strong>Distribution Summary:</strong></p>
+                        <p className="text-sm">• {attendance.filter(a => ['attended', 'late', 'left-early'].includes(a.attendanceStatus)).length} attendees × {bulkDistribution.quantityPerParticipant} = <strong>{attendance.filter(a => ['attended', 'late', 'left-early'].includes(a.attendanceStatus)).length * bulkDistribution.quantityPerParticipant} total units needed</strong></p>
+                        <p className="text-sm">• Available: {userBalances.find(b => b.productId === bulkDistribution.productId)?.availableQuantity || 0} units</p>
+                        {(attendance.filter(a => ['attended', 'late', 'left-early'].includes(a.attendanceStatus)).length * bulkDistribution.quantityPerParticipant) > (userBalances.find(b => b.productId === bulkDistribution.productId)?.availableQuantity || 0) && (
+                          <p className="text-sm text-red-600 font-bold">⚠️ Insufficient quantity!</p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Individual Distribution */}
+              {userBalances.filter(b => b.availableQuantity > 0).length > 0 && attendance.filter(a => ['attended', 'late', 'left-early'].includes(a.attendanceStatus)).length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>🎯 Distribute Materials to Individual Participant</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                      <div>
+                        <Label>Select Participant</Label>
+                        <Select
+                          value={selectedParticipantForDistribution || ''}
+                          onValueChange={setSelectedParticipantForDistribution}
+                          disabled={loading}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose participant..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {attendance.filter(a => ['attended', 'late', 'left-early'].includes(a.attendanceStatus)).map((att) => (
+                              <SelectItem key={att.programParticipantId} value={att.programParticipantId}>
+                                {att.participantName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Select Material</Label>
+                        <Select
+                          value={materialDistribution.productId}
+                          onValueChange={(value) => setMaterialDistribution({ ...materialDistribution, productId: value })}
+                          disabled={loading}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose material..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {userBalances.filter(b => b.availableQuantity > 0).map((balance) => (
+                              <SelectItem key={balance.productId} value={balance.productId}>
+                                {balance.productName} (Available: {balance.availableQuantity})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Quantity</Label>
+                        <NumberInput
+                          placeholder="Enter quantity"
+                          value={materialDistribution.quantity}
+                          max={userBalances.find(b => b.productId === materialDistribution.productId)?.availableQuantity || 0}
+                          onChange={(value) => setMaterialDistribution({ ...materialDistribution, quantity: value })}
+                          disabled={loading}
+                        />
+                      </div>
+                      <Button
+                        onClick={distributeSessionMaterial}
+                        disabled={loading || !selectedParticipantForDistribution || !materialDistribution.productId || !materialDistribution.quantity}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {loading ? 'Distributing...' : 'Distribute'}
+                      </Button>
+                    </div>
+                    {materialDistribution.productId && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Available: {userBalances.find(b => b.productId === materialDistribution.productId)?.availableQuantity || 0} units
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Session Materials Summary */}
+              {attendance.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>📋 Session Attendees & Materials</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Participant</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Materials Received</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {attendance.map((att) => (
+                          <TableRow key={att._id}>
+                            <TableCell className="font-medium">{att.participantName}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                att.attendanceStatus === 'attended' ? 'default' :
+                                ['late', 'left-early'].includes(att.attendanceStatus) ? 'secondary' :
+                                'destructive'
+                              }>
+                                {att.attendanceStatus}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {att.sessionMaterialsReceived?.length > 0 ? (
+                                <div className="space-y-1">
+                                  {att.sessionMaterialsReceived.map((material, idx) => (
+                                    <div key={idx} className="text-xs bg-green-50 px-2 py-1 rounded border">
+                                      {material.quantity}x {material.productName}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">No materials yet</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* No attendees message */}
+              {attendance.filter(a => ['attended', 'late', 'left-early'].includes(a.attendanceStatus)).length === 0 && (
+                <Card>
+                  <CardContent className="text-center py-10 text-muted-foreground">
+                    No attendees found for this session. Please ensure attendance has been recorded before distributing materials.
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* No session selected */}
+          {!selectedSessionId && (
+            <Card>
+              <CardContent className="text-center py-10 text-muted-foreground border border-dashed rounded-lg">
+                Please select a program and session above to manage material distribution.
               </CardContent>
             </Card>
           )}

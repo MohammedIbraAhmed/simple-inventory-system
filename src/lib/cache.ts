@@ -210,5 +210,15 @@ export const invalidateCache = {
   all: () => cache.clear()
 }
 
+// Export cacheUtils for compatibility
+export const cacheUtils = {
+  withCache,
+  cacheKeys,
+  invalidateCache,
+  cache,
+  getStats: () => cache.getStats(),
+  clear: () => cache.clear()
+}
+
 export { cache }
 export default cache

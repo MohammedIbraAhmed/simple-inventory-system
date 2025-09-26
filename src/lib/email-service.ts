@@ -221,3 +221,10 @@ export function generateWelcomeEmail(userName: string, userEmail: string, tempPa
     `
   }
 }
+
+// Export emailService for compatibility
+export const emailService = {
+  sendEmail,
+  generatePasswordResetEmail,
+  generateWelcomeEmail
+}
