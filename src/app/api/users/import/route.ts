@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { connectDB } from '@/lib/db'
 import { authConfig } from '@/lib/auth-config'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 
